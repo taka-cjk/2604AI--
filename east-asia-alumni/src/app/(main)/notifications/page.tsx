@@ -1,8 +1,38 @@
-export default function NotificationsPage() {
+import { redirect } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
+import type { NotificationWithActor, Profile } from "@/types/index"
+import { NotificationGroupB } from "@/components/notifications/NotificationGroupB"
+
+export default async function NotificationsPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/auth/login")
+
+  const { data: notificationsRaw } = await supabase
+    .from("notifications")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(50)
+
+  const actorIds = [...new Set(
+    (notificationsRaw ?? []).map((n: any) => n.actor_id).filter(Boolean)
+  )] as string[]
+
+  const { data: actors } = actorIds.length > 0
+    ? await supabase.from("profiles").select("*").in("id", actorIds)
+    : { data: [] }
+
+  const actorMap = Object.fromEntries((actors ?? []).map((a: any) => [a.id, a as Profile]))
+  const notifications: NotificationWithActor[] = (notificationsRaw ?? []).map((n: any) => ({
+    ...n,
+    actor: n.actor_id ? actorMap[n.actor_id] : undefined,
+  }))
+
   return (
-    <div>
-      <h1 className="text-xl font-semibold text-slate-900 mb-6">Notifications</h1>
-      <p className="text-slate-500">Your notifications will appear here.</p>
+    <div className="flex flex-col gap-6">
+      <h1 className="text-xl font-semibold text-slate-900">通知</h1>
+      <NotificationGroupB notifications={notifications} userId={user.id} />
     </div>
   )
 }
