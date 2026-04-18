@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { Profile, StudyAbroadHistory } from "@/types/index"
+import { Avatar } from "@/components/ui/Avatar"
 
 type HistoryForm = {
   university_name: string
@@ -28,7 +29,12 @@ export default function ProfileEditPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [histories, setHistories] = useState<StudyAbroadHistory[]>([])
   const [profileForm, setProfileForm] = useState({ bio: "", home_country: "", current_location: "", work_location: "" })
+  const [tagInput, setTagInput] = useState("")
+  const [tags, setTags] = useState<string[]>([])
   const [historyForm, setHistoryForm] = useState<HistoryForm>(emptyHistory)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [profileLoading, setProfileLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
@@ -50,6 +56,8 @@ export default function ProfileEditPage() {
         current_location: p.current_location ?? "",
         work_location: p.work_location ?? "",
       })
+      setTags(p.tags ?? [])
+      setAvatarUrl(p.avatar_url)
 
       const { data: h } = await supabase
         .from("study_abroad_histories")
@@ -60,6 +68,32 @@ export default function ProfileEditPage() {
     }
     load()
   }, [])
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !profile) return
+    setAvatarUploading(true)
+
+    const ext = file.name.split(".").pop()
+    const path = `${profile.id}/avatar.${ext}?t=${Date.now()}`
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(`${profile.id}/avatar.${ext}`, file, { upsert: true })
+
+    if (uploadError) {
+      alert("アップロードに失敗しました: " + uploadError.message)
+      setAvatarUploading(false)
+      return
+    }
+
+    const { data } = supabase.storage.from("avatars").getPublicUrl(`${profile.id}/avatar.${ext}`)
+    const url = `${data.publicUrl}?t=${Date.now()}`
+
+    await supabase.from("profiles").update({ avatar_url: url }).eq("id", profile.id)
+    setAvatarUrl(url)
+    setAvatarUploading(false)
+  }
 
   async function handleProfileSave(e: React.FormEvent) {
     e.preventDefault()
@@ -73,6 +107,7 @@ export default function ProfileEditPage() {
       home_country: profileForm.home_country || null,
       current_location: profileForm.current_location || null,
       work_location: profileForm.work_location || null,
+      tags,
     }).eq("id", profile.id)
 
     if (error) {
@@ -126,6 +161,41 @@ export default function ProfileEditPage() {
         </button>
       </div>
 
+      {/* Avatar upload */}
+      <section className="flex items-center gap-4">
+        <div className="relative">
+          <Avatar name={profile?.full_name ?? "?"} avatarUrl={avatarUrl} size="lg" />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={avatarUploading}
+            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 hover:opacity-100 transition-opacity"
+          >
+            <span className="text-white text-xs font-medium">
+              {avatarUploading ? "..." : "変更"}
+            </span>
+          </button>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-slate-700">プロフィール写真</p>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={avatarUploading}
+            className="mt-1 text-xs text-indigo-600 hover:underline disabled:opacity-50"
+          >
+            {avatarUploading ? "アップロード中..." : "画像を選択（JPG / PNG / WebP・2MB以内）"}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={handleAvatarChange}
+            className="hidden"
+          />
+        </div>
+      </section>
+
       {/* Profile form */}
       <section>
         <h2 className="text-sm font-semibold text-slate-900 mb-4">Basic info</h2>
@@ -157,6 +227,51 @@ export default function ProfileEditPage() {
                 />
               </div>
             ))}
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              興味・繋がりたい人
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
+                    e.preventDefault()
+                    const newTag = tagInput.trim().replace(/,$/, "")
+                    if (newTag && !tags.includes(newTag)) {
+                      setTags((t) => [...t, newTag])
+                    }
+                    setTagInput("")
+                  }
+                }}
+                placeholder="例: 留学生支援・北京・起業家（Enterで追加）"
+                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              />
+            </div>
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs text-indigo-700"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => setTags((t) => t.filter((x) => x !== tag))}
+                      className="hover:text-indigo-900"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {profileError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{profileError}</p>}

@@ -2,6 +2,8 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import type { Profile, StudyAbroadHistory } from "@/types/index"
+import { Avatar } from "@/components/ui/Avatar"
+import { StudyTimeline } from "@/components/profile/StudyTimeline"
 
 export default async function MyProfilePage() {
   const supabase = await createClient()
@@ -21,7 +23,7 @@ export default async function MyProfilePage() {
     .from("study_abroad_histories")
     .select("*")
     .eq("profile_id", user.id)
-    .order("start_date", { ascending: false })
+    .order("start_date", { ascending: true })
 
   const typedHistories = (histories ?? []) as StudyAbroadHistory[]
 
@@ -29,10 +31,13 @@ export default async function MyProfilePage() {
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">{profile.full_name}</h1>
-          <p className="text-sm text-slate-500">@{profile.username}</p>
-          {profile.bio && <p className="mt-2 text-sm text-slate-700">{profile.bio}</p>}
+        <div className="flex items-center gap-4">
+          <Avatar name={profile.full_name} avatarUrl={profile.avatar_url} size="lg" />
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">{profile.full_name}</h1>
+            <p className="text-sm text-slate-500">@{profile.username}</p>
+            {profile.bio && <p className="mt-2 text-sm text-slate-700">{profile.bio}</p>}
+          </div>
         </div>
         <Link
           href="/profile/edit"
@@ -42,37 +47,16 @@ export default async function MyProfilePage() {
         </Link>
       </div>
 
-      {/* Study abroad */}
+      {/* Study abroad timeline */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-900">Study abroad history</h2>
-          <Link
-            href="/profile/edit#study"
-            className="text-xs text-indigo-600 hover:underline"
-          >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-slate-900">留学歴</h2>
+          <Link href="/profile/edit#study" className="text-xs text-indigo-600 hover:underline">
             + Add
           </Link>
         </div>
 
-        {typedHistories.length === 0 ? (
-          <p className="text-sm text-slate-400">No history added yet.</p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {typedHistories.map((h) => (
-              <li key={h.id} className="rounded-lg border border-slate-200 px-4 py-3">
-                <p className="text-sm font-medium text-slate-900">{h.university_name}</p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {h.country}{h.program ? ` · ${h.program}` : ""}
-                </p>
-                {(h.start_date || h.end_date) && (
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {h.start_date ?? "?"} – {h.end_date ?? "present"}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+        <StudyTimeline histories={typedHistories} />
       </div>
     </div>
   )

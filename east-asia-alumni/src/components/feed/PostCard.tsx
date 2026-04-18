@@ -1,0 +1,101 @@
+"use client"
+
+import { useState } from "react"
+import { createClient } from "@/lib/supabase/client"
+import type { PostWithAuthor } from "@/types/index"
+import { Avatar } from "@/components/ui/Avatar"
+
+type Props = {
+  post: PostWithAuthor
+  userId: string
+}
+
+function formatDate(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return "今"
+  if (mins < 60) return `${mins}分前`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}時間前`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}日前`
+  return new Date(iso).toLocaleDateString("ja-JP", { month: "short", day: "numeric" })
+}
+
+export function PostCard({ post, userId }: Props) {
+  const supabase = createClient()
+  const [liked, setLiked] = useState(post.is_liked ?? false)
+  const [likesCount, setLikesCount] = useState(post.likes_count)
+
+  async function toggleLike() {
+    const next = !liked
+    setLiked(next)
+    setLikesCount((c) => c + (next ? 1 : -1))
+
+    if (next) {
+      await supabase.from("post_likes").insert({ post_id: post.id, user_id: userId })
+    } else {
+      await supabase.from("post_likes").delete().eq("post_id", post.id).eq("user_id", userId)
+    }
+  }
+
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white px-5 py-4 flex flex-col gap-3">
+      {/* Author */}
+      <div className="flex items-center gap-3">
+        <Avatar name={post.author.full_name} avatarUrl={post.author.avatar_url} size="sm" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-slate-900 truncate">{post.author.full_name}</p>
+          <p className="text-xs text-slate-400">@{post.author.username} · {formatDate(post.created_at)}</p>
+        </div>
+      </div>
+
+      {/* Content */}
+      <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">{post.content}</p>
+
+      {/* Actions */}
+      <div className="flex items-center gap-4 pt-1">
+        <button
+          onClick={toggleLike}
+          className={`flex items-center gap-1.5 text-sm transition-colors ${
+            liked ? "text-red-500" : "text-slate-400 hover:text-red-400"
+          }`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill={liked ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth={2}
+            className="h-4 w-4"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+            />
+          </svg>
+          {likesCount > 0 && <span>{likesCount}</span>}
+        </button>
+
+        <span className="flex items-center gap-1.5 text-sm text-slate-400">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="h-4 w-4"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z"
+            />
+          </svg>
+          {post.comments_count > 0 && <span>{post.comments_count}</span>}
+        </span>
+      </div>
+    </article>
+  )
+}

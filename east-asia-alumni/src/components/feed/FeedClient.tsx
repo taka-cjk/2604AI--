@@ -1,0 +1,104 @@
+"use client"
+
+import { useState, useMemo } from "react"
+import type { PostWithAuthor, EventWithOrganizer } from "@/types/index"
+import { PostCard } from "./PostCard"
+import { CreatePostForm } from "./CreatePostForm"
+import { EventCard } from "./EventCard"
+import { CreateEventForm } from "./CreateEventForm"
+
+type Tab = "feed" | "events"
+
+type Props = {
+  initialPosts: PostWithAuthor[]
+  initialEvents: EventWithOrganizer[]
+  userId: string
+}
+
+export function FeedClient({ initialPosts, initialEvents, userId }: Props) {
+  const [tab, setTab] = useState<Tab>("feed")
+  const [posts, setPosts] = useState<PostWithAuthor[]>(initialPosts)
+  const [events, setEvents] = useState<EventWithOrganizer[]>(initialEvents)
+
+  // Feed タブ: 投稿とイベントを created_at の降順で混在表示
+  const mixedFeed = useMemo(() => {
+    type FeedItem =
+      | { kind: "post"; data: PostWithAuthor; date: string }
+      | { kind: "event"; data: EventWithOrganizer; date: string }
+
+    const items: FeedItem[] = [
+      ...posts.map((p) => ({ kind: "post" as const, data: p, date: p.created_at })),
+      ...events.map((e) => ({ kind: "event" as const, data: e, date: e.created_at })),
+    ]
+    return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }, [posts, events])
+
+  // Events タブ: 開催日が近い順
+  const upcomingEvents = useMemo(
+    () => [...events].sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
+    [events]
+  )
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-slate-200">
+        {(["feed", "events"] as Tab[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              tab === t
+                ? "border-b-2 border-indigo-600 text-indigo-600"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {t === "feed" ? "Feed" : "Events"}
+          </button>
+        ))}
+      </div>
+
+      {/* Feed タブ：投稿フォーム ＋ 混在タイムライン */}
+      {tab === "feed" && (
+        <div className="flex flex-col gap-4">
+          <CreatePostForm
+            userId={userId}
+            onAdd={(post) => setPosts((prev) => [post, ...prev])}
+          />
+          {mixedFeed.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-8">
+              まだ投稿がありません。最初の投稿をしてみよう！
+            </p>
+          ) : (
+            mixedFeed.map((item) =>
+              item.kind === "post" ? (
+                <PostCard key={`post-${item.data.id}`} post={item.data} userId={userId} />
+              ) : (
+                <EventCard key={`event-${item.data.id}`} event={item.data} userId={userId} />
+              )
+            )
+          )}
+        </div>
+      )}
+
+      {/* Events タブ：イベント作成フォーム ＋ 開催日順 */}
+      {tab === "events" && (
+        <div className="flex flex-col gap-4">
+          <CreateEventForm
+            userId={userId}
+            onAdd={(event) => setEvents((prev) => [event, ...prev])}
+          />
+          {upcomingEvents.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-8">
+              予定されているイベントはありません。作成してみよう！
+            </p>
+          ) : (
+            upcomingEvents.map((event) => (
+              <EventCard key={event.id} event={event} userId={userId} />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
