@@ -1,6 +1,18 @@
 export type EventType = 'dinner' | 'study' | 'networking' | 'sports' | 'culture' | 'other'
 export type NotificationType = 'follow' | 'like' | 'comment' | 'event_join' | 'message'
 
+export type SnsLinks = {
+  x?: string
+  instagram?: string
+  facebook?: string
+  wechat?: string
+  line?: string
+  kakao?: string
+  note?: string
+  wantedly?: string
+  youtrust?: string
+}
+
 export interface Profile {
   id: string
   username: string
@@ -11,6 +23,7 @@ export interface Profile {
   current_location: string | null
   work_location: string | null
   tags: string[]
+  sns_links: SnsLinks | null
   created_at: string
   updated_at: string
 }
@@ -162,6 +175,7 @@ export type Database = {
           current_location?: string | null
           work_location?: string | null
           tags?: string[]
+          sns_links?: SnsLinks | null
         }
         Relationships: []
       }

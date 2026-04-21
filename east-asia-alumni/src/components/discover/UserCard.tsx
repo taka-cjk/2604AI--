@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { ProfileWithFollow } from "@/app/(main)/discover/page"
 import { Avatar } from "@/components/ui/Avatar"
@@ -12,37 +13,40 @@ type Props = {
 
 export function UserCard({ profile, userId }: Props) {
   const supabase = createClient()
+  const router = useRouter()
   const [following, setFollowing] = useState(profile.is_following)
 
-  async function toggleFollow() {
+  async function toggleFollow(e: React.MouseEvent) {
+    e.stopPropagation()
     const next = !following
     setFollowing(next)
-
     if (next) {
       await supabase.from("follows").insert({ follower_id: userId, following_id: profile.id })
     } else {
-      await supabase
-        .from("follows")
-        .delete()
+      await supabase.from("follows").delete()
         .eq("follower_id", userId)
         .eq("following_id", profile.id)
     }
   }
 
+  const displayTags = (profile.tags ?? []).filter((t) => t !== "seed")
+
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 flex flex-col gap-3">
+    <div
+      className="rounded-xl border border-slate-200 bg-white px-5 py-4 flex flex-col gap-3 cursor-pointer hover:border-indigo-200 hover:shadow-sm transition-all"
+      onClick={() => router.push(`/profile/${profile.id}`)}
+    >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Avatar name={profile.full_name} avatarUrl={profile.avatar_url} size="md" />
-          {/* Name */}
           <div className="min-w-0">
             <p className="text-sm font-semibold text-slate-900 truncate">{profile.full_name}</p>
             <p className="text-xs text-slate-400">@{profile.username}</p>
           </div>
         </div>
 
-        {/* Follow button */}
+        {/* Follow button — stopPropagation でカードクリックを防ぐ */}
         <button
           onClick={toggleFollow}
           className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -72,13 +76,10 @@ export function UserCard({ profile, userId }: Props) {
       )}
 
       {/* Tags */}
-      {profile.tags && profile.tags.length > 0 && (
+      {displayTags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {profile.tags.slice(0, 5).map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600"
-            >
+          {displayTags.slice(0, 5).map((tag) => (
+            <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">
               {tag}
             </span>
           ))}

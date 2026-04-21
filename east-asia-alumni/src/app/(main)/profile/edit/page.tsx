@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import type { Profile, StudyAbroadHistory } from "@/types/index"
+import type { Profile, StudyAbroadHistory, SnsLinks } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
+import { UniversityCombobox } from "@/components/ui/UniversityCombobox"
 
 type HistoryForm = {
   university_name: string
@@ -35,6 +36,7 @@ export default function ProfileEditPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [avatarUploading, setAvatarUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [snsLinks, setSnsLinks] = useState<SnsLinks>({})
   const [profileLoading, setProfileLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
@@ -57,6 +59,7 @@ export default function ProfileEditPage() {
         work_location: p.work_location ?? "",
       })
       setTags(p.tags ?? [])
+      setSnsLinks(p.sns_links ?? {})
       setAvatarUrl(p.avatar_url)
 
       const { data: h } = await supabase
@@ -108,6 +111,7 @@ export default function ProfileEditPage() {
       current_location: profileForm.current_location || null,
       work_location: profileForm.work_location || null,
       tags,
+      sns_links: snsLinks,
     }).eq("id", profile.id)
 
     if (error) {
@@ -274,6 +278,35 @@ export default function ProfileEditPage() {
             )}
           </div>
 
+          {/* SNS links */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-3">SNS・連絡先</label>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {([
+                { key: "x", label: "X (Twitter)", placeholder: "username（@なし）" },
+                { key: "instagram", label: "Instagram", placeholder: "username" },
+                { key: "facebook", label: "Facebook", placeholder: "プロフィールURL or username" },
+                { key: "wechat", label: "WeChat", placeholder: "WeChat ID" },
+                { key: "line", label: "LINE", placeholder: "LINE ID" },
+                { key: "kakao", label: "Kakao Talk", placeholder: "Kakao ID" },
+                { key: "note", label: "note", placeholder: "username" },
+                { key: "wantedly", label: "Wantedly", placeholder: "プロフィールURL" },
+                { key: "youtrust", label: "YOUTRUST", placeholder: "プロフィールURL" },
+              ] as { key: keyof typeof snsLinks; label: string; placeholder: string }[]).map(({ key, label, placeholder }) => (
+                <div key={key} className="flex items-center gap-2">
+                  <span className="w-24 shrink-0 text-xs text-slate-500">{label}</span>
+                  <input
+                    type="text"
+                    value={snsLinks[key] ?? ""}
+                    onChange={(e) => setSnsLinks((s) => ({ ...s, [key]: e.target.value || undefined }))}
+                    placeholder={placeholder}
+                    className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
           {profileError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{profileError}</p>}
           {profileSaved && <p className="text-sm text-green-600 bg-green-50 rounded-lg px-3 py-2">Saved!</p>}
 
@@ -324,13 +357,16 @@ export default function ProfileEditPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">University *</label>
-              <input
-                type="text"
+              <UniversityCombobox
                 required
                 value={historyForm.university_name}
-                onChange={(e) => setHistoryForm((f) => ({ ...f, university_name: e.target.value }))}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                placeholder="Peking University"
+                onChange={(name, country) =>
+                  setHistoryForm((f) => ({
+                    ...f,
+                    university_name: name,
+                    ...(country ? { country } : {}),
+                  }))
+                }
               />
             </div>
             <div>
