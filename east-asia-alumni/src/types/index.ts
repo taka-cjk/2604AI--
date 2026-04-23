@@ -24,6 +24,7 @@ export interface Profile {
   work_location: string | null
   tags: string[]
   sns_links: SnsLinks | null
+  area: string[] | null
   created_at: string
   updated_at: string
 }
@@ -176,6 +177,7 @@ export type Database = {
           work_location?: string | null
           tags?: string[]
           sns_links?: SnsLinks | null
+          area?: string[] | null
         }
         Relationships: []
       }

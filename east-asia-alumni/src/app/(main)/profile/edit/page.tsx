@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client"
 import type { Profile, StudyAbroadHistory, SnsLinks } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
 import { UniversityCombobox } from "@/components/ui/UniversityCombobox"
+import { CityCombobox } from "@/components/ui/CityCombobox"
+import { TOKYO_AREAS } from "@/data/areas"
 
 type HistoryForm = {
   university_name: string
@@ -37,6 +39,7 @@ export default function ProfileEditPage() {
   const [avatarUploading, setAvatarUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [snsLinks, setSnsLinks] = useState<SnsLinks>({})
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([])
   const [profileLoading, setProfileLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
@@ -60,6 +63,7 @@ export default function ProfileEditPage() {
       })
       setTags(p.tags ?? [])
       setSnsLinks(p.sns_links ?? {})
+      setSelectedAreas(p.area ?? [])
       setAvatarUrl(p.avatar_url)
 
       const { data: h } = await supabase
@@ -112,6 +116,7 @@ export default function ProfileEditPage() {
       work_location: profileForm.work_location || null,
       tags,
       sns_links: snsLinks,
+      area: selectedAreas,
     }).eq("id", profile.id)
 
     if (error) {
@@ -215,22 +220,59 @@ export default function ProfileEditPage() {
             />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {[
-              { key: "home_country", label: "Home country" },
-              { key: "current_location", label: "Current location" },
-              { key: "work_location", label: "Work location" },
-            ].map(({ key, label }) => (
-              <div key={key}>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-                <input
-                  type="text"
-                  value={profileForm[key as keyof typeof profileForm]}
-                  onChange={(e) => setProfileForm((f) => ({ ...f, [key]: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                  placeholder={label}
-                />
-              </div>
-            ))}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Home country</label>
+              <input
+                type="text"
+                value={profileForm.home_country}
+                onChange={(e) => setProfileForm((f) => ({ ...f, home_country: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                placeholder="Japan"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Current location</label>
+              <CityCombobox
+                value={profileForm.current_location}
+                onChange={(name) => setProfileForm((f) => ({ ...f, current_location: name }))}
+                placeholder="Tokyo"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Work location</label>
+              <CityCombobox
+                value={profileForm.work_location}
+                onChange={(name) => setProfileForm((f) => ({ ...f, work_location: name }))}
+                placeholder="Tokyo"
+              />
+            </div>
+          </div>
+
+          {/* Area（東京エリア） */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              よく出没するエリア（東京）
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {TOKYO_AREAS.map((a) => {
+                const checked = selectedAreas.includes(a.name)
+                return (
+                  <label key={a.name} className={`flex items-center gap-1.5 cursor-pointer rounded-full border px-3 py-1 text-xs transition-colors ${checked ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-slate-200 text-slate-600 hover:border-indigo-300"}`}>
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={checked}
+                      onChange={() =>
+                        setSelectedAreas((prev) =>
+                          checked ? prev.filter((x) => x !== a.name) : [...prev, a.name]
+                        )
+                      }
+                    />
+                    {a.name}
+                  </label>
+                )
+              })}
+            </div>
           </div>
 
           {/* Tags */}

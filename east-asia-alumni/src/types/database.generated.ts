@@ -368,6 +368,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          area: string[] | null
           avatar_url: string | null
           bio: string | null
           created_at: string
@@ -375,12 +376,14 @@ export type Database = {
           full_name: string
           home_country: string | null
           id: string
+          sns_links: Record<string, string> | null
           tags: string[] | null
           updated_at: string
           username: string
           work_location: string | null
         }
         Insert: {
+          area?: string[] | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -388,12 +391,14 @@ export type Database = {
           full_name: string
           home_country?: string | null
           id: string
+          sns_links?: Record<string, string> | null
           tags?: string[] | null
           updated_at?: string
           username: string
           work_location?: string | null
         }
         Update: {
+          area?: string[] | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -401,6 +406,7 @@ export type Database = {
           full_name?: string
           home_country?: string | null
           id?: string
+          sns_links?: Record<string, string> | null
           tags?: string[] | null
           updated_at?: string
           username?: string
