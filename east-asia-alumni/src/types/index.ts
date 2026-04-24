@@ -25,6 +25,7 @@ export interface Profile {
   tags: string[]
   sns_links: SnsLinks | null
   area: string[] | null
+  wants: string[] | null
   created_at: string
   updated_at: string
 }
@@ -178,6 +179,7 @@ export type Database = {
           tags?: string[]
           sns_links?: SnsLinks | null
           area?: string[] | null
+          wants?: string[] | null
         }
         Relationships: []
       }

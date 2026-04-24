@@ -4,6 +4,7 @@ import { useState, useMemo } from "react"
 import dynamic from "next/dynamic"
 import type { ProfileWithFollow } from "@/app/(main)/discover/page"
 import { UserCard } from "./UserCard"
+import { WANTS_OPTIONS } from "@/data/wants"
 
 const AlumniMap = dynamic(() => import("./AlumniMap"), {
   ssr: false,
@@ -25,6 +26,7 @@ export function DiscoverClient({ profiles, userId }: Props) {
   const [tab, setTab] = useState<Tab>("list")
   const [query, setQuery] = useState("")
   const [countryFilter, setCountryFilter] = useState("")
+  const [wantsFilter, setWantsFilter] = useState("")
 
   const countries = useMemo(() => {
     const set = new Set<string>()
@@ -37,9 +39,10 @@ export function DiscoverClient({ profiles, userId }: Props) {
     return profiles.filter((p) => {
       const matchQuery = !q || p.full_name.toLowerCase().includes(q) || p.username.toLowerCase().includes(q)
       const matchCountry = !countryFilter || p.home_country === countryFilter
-      return matchQuery && matchCountry
+      const matchWants = !wantsFilter || (p.wants ?? []).includes(wantsFilter)
+      return matchQuery && matchCountry && matchWants
     })
-  }, [profiles, query, countryFilter])
+  }, [profiles, query, countryFilter, wantsFilter])
 
   return (
     <div className="flex flex-col gap-6">
@@ -86,6 +89,16 @@ export function DiscoverClient({ profiles, userId }: Props) {
                 ))}
               </select>
             )}
+            <select
+              value={wantsFilter}
+              onChange={(e) => setWantsFilter(e.target.value)}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+            >
+              <option value="">やりたいこと（すべて）</option>
+              {WANTS_OPTIONS.map((w) => (
+                <option key={w.value} value={w.value}>{w.emoji} {w.label}</option>
+              ))}
+            </select>
           </div>
 
           <p className="text-xs text-slate-400">{filtered.length}人のアルムナイ</p>

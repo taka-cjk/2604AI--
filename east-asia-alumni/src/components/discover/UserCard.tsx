@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { ProfileWithFollow } from "@/app/(main)/discover/page"
 import { Avatar } from "@/components/ui/Avatar"
+import { WANTS_MAP } from "@/data/wants"
 
 type Props = {
   profile: ProfileWithFollow
@@ -30,6 +31,7 @@ export function UserCard({ profile, userId }: Props) {
   }
 
   const displayTags = (profile.tags ?? []).filter((t) => t !== "seed")
+  const displayWants = (profile.wants ?? []).slice(0, 3)
 
   return (
     <div
@@ -83,6 +85,21 @@ export function UserCard({ profile, userId }: Props) {
               {tag}
             </span>
           ))}
+        </div>
+      )}
+
+      {/* Wants */}
+      {displayWants.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {displayWants.map((value) => {
+            const w = WANTS_MAP[value]
+            if (!w) return null
+            return (
+              <span key={value} className="rounded-full bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 text-xs text-indigo-600">
+                {w.emoji} {w.label}
+              </span>
+            )
+          })}
         </div>
       )}
     </div>

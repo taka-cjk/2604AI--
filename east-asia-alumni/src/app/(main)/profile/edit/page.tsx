@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/Avatar"
 import { UniversityCombobox } from "@/components/ui/UniversityCombobox"
 import { CityCombobox } from "@/components/ui/CityCombobox"
 import { TOKYO_AREAS } from "@/data/areas"
+import { WANTS_OPTIONS } from "@/data/wants"
 
 type HistoryForm = {
   university_name: string
@@ -40,6 +41,7 @@ export default function ProfileEditPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [snsLinks, setSnsLinks] = useState<SnsLinks>({})
   const [selectedAreas, setSelectedAreas] = useState<string[]>([])
+  const [selectedWants, setSelectedWants] = useState<string[]>([])
   const [profileLoading, setProfileLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
@@ -64,6 +66,7 @@ export default function ProfileEditPage() {
       setTags(p.tags ?? [])
       setSnsLinks(p.sns_links ?? {})
       setSelectedAreas(p.area ?? [])
+      setSelectedWants(p.wants ?? [])
       setAvatarUrl(p.avatar_url)
 
       const { data: h } = await supabase
@@ -117,6 +120,7 @@ export default function ProfileEditPage() {
       tags,
       sns_links: snsLinks,
       area: selectedAreas,
+      wants: selectedWants,
     }).eq("id", profile.id)
 
     if (error) {
@@ -269,6 +273,33 @@ export default function ProfileEditPage() {
                       }
                     />
                     {a.name}
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Wants */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              今、求めていること
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {WANTS_OPTIONS.map((w) => {
+                const checked = selectedWants.includes(w.value)
+                return (
+                  <label key={w.value} className={`flex items-center gap-1.5 cursor-pointer rounded-full border px-3 py-1 text-xs transition-colors ${checked ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-slate-200 text-slate-600 hover:border-indigo-300"}`}>
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={checked}
+                      onChange={() =>
+                        setSelectedWants((prev) =>
+                          checked ? prev.filter((x) => x !== w.value) : [...prev, w.value]
+                        )
+                      }
+                    />
+                    {w.emoji} {w.label}
                   </label>
                 )
               })}

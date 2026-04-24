@@ -380,6 +380,7 @@ export type Database = {
           tags: string[] | null
           updated_at: string
           username: string
+          wants: string[] | null
           work_location: string | null
         }
         Insert: {
@@ -395,6 +396,7 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string
           username: string
+          wants?: string[] | null
           work_location?: string | null
         }
         Update: {
@@ -410,6 +412,7 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string
           username?: string
+          wants?: string[] | null
           work_location?: string | null
         }
         Relationships: []
