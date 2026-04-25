@@ -57,7 +57,7 @@ export default async function FeedPage() {
         .in("event_id", eventIds)
     : { data: [] }
 
-  const events: EventWithOrganizer[] = (eventsRaw ?? []).map((e) => ({
+  const events = ((eventsRaw ?? []).map((e) => ({
     id: e.id,
     organizer_id: e.organizer_id,
     title: e.title,
@@ -73,7 +73,7 @@ export default async function FeedPage() {
     is_participating: (participantsData ?? []).some(
       (p) => p.event_id === e.id && p.user_id === user.id
     ),
-  }))
+  }))) as EventWithOrganizer[]
 
   return <FeedClient initialPosts={posts} initialEvents={events} userId={user.id} />
 }
