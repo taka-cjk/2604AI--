@@ -23,18 +23,23 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
-
   const isAuthPage = pathname.startsWith("/auth/")
 
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch {
+    // Supabase 呼び出し失敗時はリダイレクトせずそのまま通す
+    return supabaseResponse
+  }
+
   if (!user && !isAuthPage) {
-    // 未ログイン → ログインページへ
     return NextResponse.redirect(new URL("/auth/login", request.url))
   }
 
   if (user && isAuthPage && pathname !== "/auth/callback" && pathname !== "/auth/onboarding") {
-    // ログイン済みでauth画面にいる → feedへ
     return NextResponse.redirect(new URL("/feed", request.url))
   }
 
