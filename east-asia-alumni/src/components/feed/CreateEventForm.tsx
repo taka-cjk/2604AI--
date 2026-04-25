@@ -72,6 +72,7 @@ export function CreateEventForm({ userId, onAdd }: Props) {
     if (organizer) {
       onAdd({
         ...event,
+        event_type: event.event_type as EventType,
         organizer,
         participants_count: 0,
         is_participating: false,
