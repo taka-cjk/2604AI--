@@ -38,6 +38,7 @@ export default function AlumniMap({ profiles }: Props) {
 
     async function init() {
       const L = (await import("leaflet")).default
+      // @ts-ignore
       await import("leaflet.heat")
 
       const map = L.map(mapRef.current!, {
