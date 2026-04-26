@@ -1,5 +1,6 @@
 "use server"
 
+import { headers } from "next/headers"
 import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
 
@@ -22,9 +23,9 @@ export async function sendPasswordReset(email: string): Promise<{ error: string 
     }
   }
 
-  const origin = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000"
+  const headersList = await headers()
+  const host = headersList.get("x-forwarded-host") ?? headersList.get("host") ?? "localhost:3000"
+  const origin = host.includes("localhost") ? `http://${host}` : `https://${host}`
 
   const supabase = await createClient()
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
