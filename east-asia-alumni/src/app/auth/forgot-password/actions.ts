@@ -9,10 +9,9 @@ export async function sendPasswordReset(email: string): Promise<{ error: string 
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { data } = await adminClient.auth.admin.listUsers()
-  const exists = data.users.some((u) => u.email?.toLowerCase() === email.toLowerCase())
+  const { data: userData, error: lookupError } = await adminClient.auth.admin.getUserByEmail(email)
 
-  if (!exists) {
+  if (lookupError || !userData?.user) {
     return { error: "そのメールアドレスは登録されていません" }
   }
 
