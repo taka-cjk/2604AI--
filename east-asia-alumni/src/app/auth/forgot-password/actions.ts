@@ -11,7 +11,11 @@ export async function sendPasswordReset(email: string): Promise<{ error: string 
 
   const { data, error: listError } = await adminClient.auth.admin.listUsers()
 
-  if (!listError && data?.users) {
+  if (listError) {
+    return { error: `[debug] admin error: ${listError.message}` }
+  }
+
+  if (data?.users) {
     const exists = data.users.some((u) => u.email?.toLowerCase() === email.toLowerCase())
     if (!exists) {
       return { error: "そのメールアドレスは登録されていません" }
