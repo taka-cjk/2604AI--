@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { PasswordInput } from "@/components/ui/PasswordInput"
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -44,25 +45,11 @@ export default function ResetPasswordPage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">新しいパスワード</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-            placeholder="8文字以上"
-          />
+          <PasswordInput value={password} onChange={setPassword} placeholder="8文字以上" required minLength={8} />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">確認</label>
-          <input
-            type="password"
-            required
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-            placeholder="もう一度入力"
-          />
+          <PasswordInput value={confirm} onChange={setConfirm} placeholder="もう一度入力" required />
         </div>
 
         {error && (
