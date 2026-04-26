@@ -9,7 +9,7 @@ export async function sendPasswordReset(email: string): Promise<{ error: string 
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { data, error: listError } = await adminClient.auth.admin.listUsers()
+  const { data, error: listError } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
 
   if (listError) {
     return { error: `[debug] admin error: ${listError.message}` }
@@ -18,7 +18,7 @@ export async function sendPasswordReset(email: string): Promise<{ error: string 
   if (data?.users) {
     const exists = data.users.some((u) => u.email?.toLowerCase() === email.toLowerCase())
     if (!exists) {
-      return { error: `[debug] ${data.users.length}件中、${email} が見つかりません` }
+      return { error: "そのメールアドレスは登録されていません" }
     }
   }
 
