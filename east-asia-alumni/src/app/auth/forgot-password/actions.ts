@@ -9,10 +9,13 @@ export async function sendPasswordReset(email: string): Promise<{ error: string 
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { data: userData, error: lookupError } = await adminClient.auth.admin.getUserByEmail(email)
+  const { data, error: listError } = await adminClient.auth.admin.listUsers()
 
-  if (lookupError || !userData?.user) {
-    return { error: "そのメールアドレスは登録されていません" }
+  if (!listError && data?.users) {
+    const exists = data.users.some((u) => u.email?.toLowerCase() === email.toLowerCase())
+    if (!exists) {
+      return { error: "そのメールアドレスは登録されていません" }
+    }
   }
 
   const origin = process.env.VERCEL_URL
