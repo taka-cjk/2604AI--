@@ -18,7 +18,7 @@ export async function sendPasswordReset(email: string): Promise<{ error: string 
   if (data?.users) {
     const exists = data.users.some((u) => u.email?.toLowerCase() === email.toLowerCase())
     if (!exists) {
-      return { error: "そのメールアドレスは登録されていません" }
+      return { error: `[debug] ${data.users.length}件中、${email} が見つかりません` }
     }
   }
 
