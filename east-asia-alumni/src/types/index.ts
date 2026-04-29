@@ -79,6 +79,9 @@ export interface Event {
   location: string | null
   event_date: string
   max_participants: number | null
+  price_students: string | null
+  price_other: string | null
+  registration_link: string | null
   created_at: string
   updated_at: string
 }

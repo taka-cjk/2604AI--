@@ -147,6 +147,9 @@ export type Database = {
           location: string | null
           max_participants: number | null
           organizer_id: string
+          price_other: string | null
+          price_students: string | null
+          registration_link: string | null
           title: string
           updated_at: string
         }
@@ -159,6 +162,9 @@ export type Database = {
           location?: string | null
           max_participants?: number | null
           organizer_id: string
+          price_other?: string | null
+          price_students?: string | null
+          registration_link?: string | null
           title: string
           updated_at?: string
         }
@@ -171,6 +177,9 @@ export type Database = {
           location?: string | null
           max_participants?: number | null
           organizer_id?: string
+          price_other?: string | null
+          price_students?: string | null
+          registration_link?: string | null
           title?: string
           updated_at?: string
         }
