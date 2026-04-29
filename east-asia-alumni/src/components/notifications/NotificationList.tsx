@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { NotificationWithActor, NotificationType } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
@@ -96,6 +97,7 @@ function FollowBackButton({ actorId, userId }: { actorId: string; userId: string
 
 export function NotificationList({ notifications, userId }: Props) {
   const supabase = createClient()
+  const router = useRouter()
   const [items, setItems] = useState(notifications)
 
   const unreadCount = items.filter((n) => !n.read).length
@@ -177,9 +179,10 @@ export function NotificationList({ notifications, userId }: Props) {
             {groupItems.map((n) => (
               <div
                 key={n.id}
+                onClick={() => n.actor_id && router.push(`/profile/${n.actor_id}`)}
                 className={`flex items-center gap-3 px-4 py-3 border-t border-slate-100 first:border-t-0 ${
                   !n.read ? "bg-blue-50/30" : ""
-                }`}
+                } ${n.actor_id ? "cursor-pointer hover:bg-slate-50 transition-colors" : ""}`}
               >
                 {n.actor ? (
                   <Avatar name={n.actor.full_name} avatarUrl={n.actor.avatar_url} size="sm" />
@@ -189,9 +192,11 @@ export function NotificationList({ notifications, userId }: Props) {
                   </div>
                 )}
                 <p className="flex-1 text-sm text-slate-700 min-w-0">{getNotificationText(n)}</p>
-                {/* follow のみフォローバックボタン、それ以外は時間 */}
+                {/* follow のみフォローバックボタン（クリック伝播を止める）、それ以外は時間 */}
                 {n.type === "follow" && n.actor_id ? (
-                  <FollowBackButton actorId={n.actor_id} userId={userId} />
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <FollowBackButton actorId={n.actor_id} userId={userId} />
+                  </div>
                 ) : (
                   <span className="text-xs text-slate-400 shrink-0">{formatDate(n.created_at)}</span>
                 )}

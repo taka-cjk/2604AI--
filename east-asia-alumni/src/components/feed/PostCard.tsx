@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import type { PostWithAuthor } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
@@ -42,13 +43,13 @@ export function PostCard({ post, userId }: Props) {
   return (
     <article className="rounded-xl border border-slate-200 bg-white px-5 py-4 flex flex-col gap-3">
       {/* Author */}
-      <div className="flex items-center gap-3">
+      <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
         <Avatar name={post.author.full_name} avatarUrl={post.author.avatar_url} size="sm" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-slate-900 truncate">{post.author.full_name}</p>
           <p className="text-xs text-slate-400">@{post.author.username} · {formatDate(post.created_at)}</p>
         </div>
-      </div>
+      </Link>
 
       {/* Content */}
       <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">{post.content}</p>
