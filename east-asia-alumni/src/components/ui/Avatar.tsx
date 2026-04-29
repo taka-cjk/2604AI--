@@ -1,4 +1,4 @@
-type Size = "sm" | "md" | "lg"
+type Size = "xs" | "sm" | "md" | "lg"
 
 type Props = {
   name: string
@@ -7,6 +7,7 @@ type Props = {
 }
 
 const SIZE_CLASS: Record<Size, string> = {
+  xs: "h-7 w-7 text-xs",
   sm: "h-9 w-9 text-sm",
   md: "h-10 w-10 text-sm",
   lg: "h-16 w-16 text-xl",
