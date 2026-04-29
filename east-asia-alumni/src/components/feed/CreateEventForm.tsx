@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { EventWithOrganizer, EventType, Profile } from "@/types/index"
 
@@ -55,8 +55,40 @@ export function CreateEventForm({ userId, onAdd }: Props) {
     reg_link_url: "",
   })
 
+  const [cohosts, setCohosts] = useState<Profile[]>([])
+  const [cohostQuery, setCohostQuery] = useState("")
+  const [cohostResults, setCohostResults] = useState<Profile[]>([])
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
   function update(key: keyof typeof form, value: string) {
     setForm((f) => ({ ...f, [key]: value }))
+  }
+
+  function handleCohostSearch(q: string) {
+    setCohostQuery(q)
+    clearTimeout(searchTimeout.current)
+    if (!q.trim()) { setCohostResults([]); return }
+    searchTimeout.current = setTimeout(async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .or(`username.ilike.%${q}%,full_name.ilike.%${q}%`)
+        .neq("id", userId)
+        .limit(5)
+      setCohostResults((data ?? []) as Profile[])
+    }, 300)
+  }
+
+  function addCohost(profile: Profile) {
+    if (!cohosts.some((c) => c.id === profile.id)) {
+      setCohosts((prev) => [...prev, profile])
+    }
+    setCohostQuery("")
+    setCohostResults([])
+  }
+
+  function removeCohost(id: string) {
+    setCohosts((prev) => prev.filter((c) => c.id !== id))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -88,6 +120,12 @@ export function CreateEventForm({ userId, onAdd }: Props) {
       return
     }
 
+    if (cohosts.length > 0) {
+      await supabase.from("event_cohosts").insert(
+        cohosts.map((c) => ({ event_id: event.id, user_id: c.id }))
+      )
+    }
+
     const { data: organizer } = await supabase
       .from("profiles")
       .select("*")
@@ -102,6 +140,7 @@ export function CreateEventForm({ userId, onAdd }: Props) {
         price_other: event.price_other ?? null,
         registration_link: event.registration_link ?? null,
         organizer,
+        cohosts,
         participants_count: 0,
         is_participating: false,
       })
@@ -114,6 +153,7 @@ export function CreateEventForm({ userId, onAdd }: Props) {
       price_other_mode: "none", price_other_amount: "",
       reg_link_mode: "none", reg_link_url: "",
     })
+    setCohosts([])
     setOpen(false)
     setLoading(false)
   }
@@ -192,7 +232,6 @@ export function CreateEventForm({ userId, onAdd }: Props) {
       <div>
         <label className="block text-xs font-medium text-slate-600 mb-2">参加費</label>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {/* Students */}
           <div>
             <p className="text-xs text-slate-500 mb-1">学生</p>
             <div className="flex gap-1.5">
@@ -204,14 +243,12 @@ export function CreateEventForm({ userId, onAdd }: Props) {
               </select>
               {form.price_students_mode === "amount" && (
                 <input type="number" min={0} value={form.price_students_amount}
-                  onChange={(e) => update("price_students_amount", e.target.value)}
-                  placeholder="1500"
+                  onChange={(e) => update("price_students_amount", e.target.value)} placeholder="1500"
                   className="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500"
                 />
               )}
             </div>
           </div>
-          {/* Other */}
           <div>
             <p className="text-xs text-slate-500 mb-1">一般</p>
             <div className="flex gap-1.5">
@@ -223,8 +260,7 @@ export function CreateEventForm({ userId, onAdd }: Props) {
               </select>
               {form.price_other_mode === "amount" && (
                 <input type="number" min={0} value={form.price_other_amount}
-                  onChange={(e) => update("price_other_amount", e.target.value)}
-                  placeholder="2000"
+                  onChange={(e) => update("price_other_amount", e.target.value)} placeholder="2000"
                   className="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500"
                 />
               )}
@@ -246,10 +282,50 @@ export function CreateEventForm({ userId, onAdd }: Props) {
           </select>
           {form.reg_link_mode === "url" && (
             <input type="url" value={form.reg_link_url}
-              onChange={(e) => update("reg_link_url", e.target.value)}
-              placeholder="https://..."
+              onChange={(e) => update("reg_link_url", e.target.value)} placeholder="https://..."
               className="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-indigo-500"
             />
+          )}
+        </div>
+      </div>
+
+      {/* Co-hosts */}
+      <div>
+        <label className="block text-xs font-medium text-slate-600 mb-2">共同ホスト</label>
+        {cohosts.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {cohosts.map((c) => (
+              <span key={c.id} className="flex items-center gap-1 bg-purple-50 text-purple-700 rounded-full px-2.5 py-1 text-xs font-medium">
+                @{c.username}
+                <button type="button" onClick={() => removeCohost(c.id)} className="text-purple-400 hover:text-purple-700 leading-none">×</button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="relative">
+          <input
+            type="text"
+            value={cohostQuery}
+            onChange={(e) => handleCohostSearch(e.target.value)}
+            placeholder="ユーザー名・名前で検索..."
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+          />
+          {cohostResults.filter((r) => !cohosts.some((c) => c.id === r.id)).length > 0 && (
+            <div className="absolute z-10 top-full mt-1 w-full bg-white rounded-lg border border-slate-200 shadow-lg overflow-hidden">
+              {cohostResults
+                .filter((r) => !cohosts.some((c) => c.id === r.id))
+                .map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => addCohost(r)}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-slate-50 text-left"
+                  >
+                    <span className="font-medium text-slate-800">{r.full_name}</span>
+                    <span className="text-slate-400">@{r.username}</span>
+                  </button>
+                ))}
+            </div>
           )}
         </div>
       </div>

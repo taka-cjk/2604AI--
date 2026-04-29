@@ -92,6 +92,12 @@ export interface EventParticipant {
   created_at: string
 }
 
+export interface EventCohost {
+  event_id: string
+  user_id: string
+  created_at: string
+}
+
 export interface Conversation {
   id: string
   created_at: string
@@ -138,6 +144,7 @@ export interface EventWithOrganizer extends Event {
   organizer: Profile
   participants_count: number
   is_participating?: boolean
+  cohosts: Profile[]
 }
 
 export interface ProfileWithStats extends Profile {

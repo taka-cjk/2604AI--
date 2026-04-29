@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
-import type { EventWithOrganizer, EventType, CommentWithAuthor } from "@/types/index"
+import type { EventWithOrganizer, EventType, CommentWithAuthor, Profile } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
 
 type Props = {
@@ -84,11 +84,7 @@ function isoToDatetimeLocal(iso: string): string {
 
 function formatEventDate(iso: string) {
   return new Date(iso).toLocaleDateString("ja-JP", {
-    month: "long",
-    day: "numeric",
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
+    month: "long", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit",
   })
 }
 
@@ -130,6 +126,10 @@ export function EventCard({ event, userId, onUpdate }: Props) {
     reg_link_mode: "none" as RegMode,
     reg_link_url: "",
   })
+  const [editCohosts, setEditCohosts] = useState<Profile[]>([])
+  const [cohostQuery, setCohostQuery] = useState("")
+  const [cohostResults, setCohostResults] = useState<Profile[]>([])
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [editLoading, setEditLoading] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
 
@@ -148,12 +148,43 @@ export function EventCard({ event, userId, onUpdate }: Props) {
       reg_link_mode: parseRegMode(event.registration_link),
       reg_link_url: (event.registration_link && !["TBD", "NA"].includes(event.registration_link)) ? event.registration_link : "",
     })
+    setEditCohosts(event.cohosts ?? [])
+    setCohostQuery("")
+    setCohostResults([])
     setEditError(null)
     setShowEdit(true)
   }
 
   function updateEdit(key: keyof typeof editForm, value: string) {
     setEditForm((f) => ({ ...f, [key]: value }))
+  }
+
+  function handleCohostSearch(q: string) {
+    setCohostQuery(q)
+    clearTimeout(searchTimeout.current)
+    if (!q.trim()) { setCohostResults([]); return }
+    searchTimeout.current = setTimeout(async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .or(`username.ilike.%${q}%,full_name.ilike.%${q}%`)
+        .neq("id", userId)
+        .neq("id", event.organizer_id)
+        .limit(5)
+      setCohostResults((data ?? []) as Profile[])
+    }, 300)
+  }
+
+  function addCohost(profile: Profile) {
+    if (!editCohosts.some((c) => c.id === profile.id)) {
+      setEditCohosts((prev) => [...prev, profile])
+    }
+    setCohostQuery("")
+    setCohostResults([])
+  }
+
+  function removeCohost(id: string) {
+    setEditCohosts((prev) => prev.filter((c) => c.id !== id))
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -190,6 +221,22 @@ export function EventCard({ event, userId, onUpdate }: Props) {
       return
     }
 
+    // コホストの差分更新
+    const originalIds = new Set((event.cohosts ?? []).map((c) => c.id))
+    const newIds = new Set(editCohosts.map((c) => c.id))
+    const toRemove = [...originalIds].filter((id) => !newIds.has(id))
+    const toAdd = [...newIds].filter((id) => !originalIds.has(id))
+
+    await Promise.all([
+      toRemove.length > 0
+        ? supabase.from("event_cohosts").delete().eq("event_id", event.id).in("user_id", toRemove)
+        : Promise.resolve(),
+      toAdd.length > 0
+        ? supabase.from("event_cohosts").insert(toAdd.map((id) => ({ event_id: event.id, user_id: id })))
+        : Promise.resolve(),
+    ])
+
+    // 日時または場所が変わった場合、参加者に通知
     if (dateChanged || locationChanged) {
       const { data: participants } = await supabase
         .from("event_participants")
@@ -217,6 +264,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
         price_other: updated.price_other ?? null,
         registration_link: updated.registration_link ?? null,
         organizer: event.organizer,
+        cohosts: editCohosts,
         participants_count: count,
         is_participating: participating,
       })
@@ -271,6 +319,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
 
   const isFull = event.max_participants !== null && count >= event.max_participants && !participating
   const isOrganizer = userId === event.organizer_id
+  const cohostIds = new Set((event.cohosts ?? []).map((c) => c.id))
 
   const priceStudents = formatPrice(event.price_students)
   const priceOther = formatPrice(event.price_other)
@@ -344,8 +393,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
                   </select>
                   {editForm.price_students_mode === "amount" && (
                     <input type="number" min={0} value={editForm.price_students_amount}
-                      onChange={(e) => updateEdit("price_students_amount", e.target.value)}
-                      placeholder="1500"
+                      onChange={(e) => updateEdit("price_students_amount", e.target.value)} placeholder="1500"
                       className="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500"
                     />
                   )}
@@ -362,8 +410,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
                   </select>
                   {editForm.price_other_mode === "amount" && (
                     <input type="number" min={0} value={editForm.price_other_amount}
-                      onChange={(e) => updateEdit("price_other_amount", e.target.value)}
-                      placeholder="2000"
+                      onChange={(e) => updateEdit("price_other_amount", e.target.value)} placeholder="2000"
                       className="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500"
                     />
                   )}
@@ -385,10 +432,46 @@ export function EventCard({ event, userId, onUpdate }: Props) {
               </select>
               {editForm.reg_link_mode === "url" && (
                 <input type="url" value={editForm.reg_link_url}
-                  onChange={(e) => updateEdit("reg_link_url", e.target.value)}
-                  placeholder="https://..."
+                  onChange={(e) => updateEdit("reg_link_url", e.target.value)} placeholder="https://..."
                   className="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-indigo-500"
                 />
+              )}
+            </div>
+          </div>
+
+          {/* Co-hosts edit */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-2">共同ホスト</label>
+            {editCohosts.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {editCohosts.map((c) => (
+                  <span key={c.id} className="flex items-center gap-1 bg-purple-50 text-purple-700 rounded-full px-2.5 py-1 text-xs font-medium">
+                    @{c.username}
+                    <button type="button" onClick={() => removeCohost(c.id)} className="text-purple-400 hover:text-purple-700 leading-none">×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="relative">
+              <input
+                type="text"
+                value={cohostQuery}
+                onChange={(e) => handleCohostSearch(e.target.value)}
+                placeholder="ユーザー名・名前で検索..."
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              />
+              {cohostResults.filter((r) => !editCohosts.some((c) => c.id === r.id)).length > 0 && (
+                <div className="absolute z-10 top-full mt-1 w-full bg-white rounded-lg border border-slate-200 shadow-lg overflow-hidden">
+                  {cohostResults
+                    .filter((r) => !editCohosts.some((c) => c.id === r.id))
+                    .map((r) => (
+                      <button key={r.id} type="button" onClick={() => addCohost(r)}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-slate-50 text-left">
+                        <span className="font-medium text-slate-800">{r.full_name}</span>
+                        <span className="text-slate-400">@{r.username}</span>
+                      </button>
+                    ))}
+                </div>
               )}
             </div>
           </div>
@@ -466,8 +549,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
                 ) : event.registration_link === "NA" ? (
                   <span>事前登録不要</span>
                 ) : (
-                  <a href={event.registration_link} target="_blank" rel="noopener noreferrer"
-                    className="text-indigo-600 hover:underline">
+                  <a href={event.registration_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
                     登録はこちら ↗
                   </a>
                 )}
@@ -480,16 +562,22 @@ export function EventCard({ event, userId, onUpdate }: Props) {
 
           {/* Footer */}
           <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 text-slate-400">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-              </svg>
-              <span>
-                {count}人参加
-                {event.max_participants ? ` / 最大${event.max_participants}人` : ""}
-              </span>
-              <span className="text-slate-300">·</span>
-              <span>主催: @{event.organizer.username}</span>
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 text-slate-400">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                </svg>
+                <span>
+                  {count}人参加{event.max_participants ? ` / 最大${event.max_participants}人` : ""}
+                </span>
+                <span className="text-slate-300">·</span>
+                <span>主催: @{event.organizer.username}</span>
+              </div>
+              {(event.cohosts ?? []).length > 0 && (
+                <p className="text-xs text-slate-400 pl-5">
+                  共同ホスト: {event.cohosts.map((c) => `@${c.username}`).join("、")}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -527,7 +615,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
           {comments.length > 0 && (
             <div className="flex flex-col gap-2">
               {comments.map((c) => {
-                const isHost = c.author_id === event.organizer_id
+                const isHost = c.author_id === event.organizer_id || cohostIds.has(c.author_id)
                 return (
                   <div
                     key={c.id}

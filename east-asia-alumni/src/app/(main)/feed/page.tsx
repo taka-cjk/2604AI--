@@ -50,12 +50,14 @@ export default async function FeedPage() {
 
   const eventIds = (eventsRaw ?? []).map((e) => e.id)
 
-  const { data: participantsData } = eventIds.length
-    ? await supabase
-        .from("event_participants")
-        .select("event_id, user_id")
-        .in("event_id", eventIds)
-    : { data: [] }
+  const [{ data: participantsData }, { data: cohostsData }] = await Promise.all([
+    eventIds.length
+      ? supabase.from("event_participants").select("event_id, user_id").in("event_id", eventIds)
+      : Promise.resolve({ data: [] }),
+    eventIds.length
+      ? supabase.from("event_cohosts").select("event_id, profile:profiles!event_cohosts_user_id_fkey(*)").in("event_id", eventIds)
+      : Promise.resolve({ data: [] }),
+  ])
 
   const events = ((eventsRaw ?? []).map((e) => ({
     id: e.id,
@@ -76,6 +78,9 @@ export default async function FeedPage() {
     is_participating: (participantsData ?? []).some(
       (p) => p.event_id === e.id && p.user_id === user.id
     ),
+    cohosts: (cohostsData ?? [])
+      .filter((c) => c.event_id === e.id)
+      .map((c) => c.profile as Profile),
   }))) as EventWithOrganizer[]
 
   return <FeedClient initialPosts={posts} initialEvents={events} userId={user.id} />
