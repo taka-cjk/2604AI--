@@ -74,7 +74,14 @@ export function FeedClient({ initialPosts, initialEvents, userId }: Props) {
               item.kind === "post" ? (
                 <PostCard key={`post-${item.data.id}`} post={item.data} userId={userId} />
               ) : (
-                <EventCard key={`event-${item.data.id}`} event={item.data} userId={userId} />
+                <EventCard
+                  key={`event-${item.data.id}`}
+                  event={item.data}
+                  userId={userId}
+                  onUpdate={(updated) =>
+                    setEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
+                  }
+                />
               )
             )
           )}
@@ -94,7 +101,14 @@ export function FeedClient({ initialPosts, initialEvents, userId }: Props) {
             </p>
           ) : (
             upcomingEvents.map((event) => (
-              <EventCard key={event.id} event={event} userId={userId} />
+              <EventCard
+                key={event.id}
+                event={event}
+                userId={userId}
+                onUpdate={(updated) =>
+                  setEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
+                }
+              />
             ))
           )}
         </div>

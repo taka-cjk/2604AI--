@@ -30,6 +30,7 @@ function getNotificationText(n: NotificationWithActor): string {
     case "like": return `${name} があなたの投稿にいいねしました`
     case "comment": return `${name} があなたの投稿にコメントしました`
     case "event_join": return `${name} があなたのイベントに参加しました`
+    case "event_update": return `参加中のイベントの詳細が変更されました`
     case "message": return `${name} からメッセージが届きました`
   }
 }
@@ -39,6 +40,7 @@ const GROUP_CONFIG: Record<NotificationType, { label: string; iconBg: string; ic
   like: { label: "いいね", iconBg: "bg-red-50", iconColor: "text-red-500" },
   comment: { label: "コメント", iconBg: "bg-blue-50", iconColor: "text-blue-500" },
   event_join: { label: "イベント参加", iconBg: "bg-teal-50", iconColor: "text-teal-500" },
+  event_update: { label: "イベント変更", iconBg: "bg-amber-50", iconColor: "text-amber-500" },
   message: { label: "メッセージ", iconBg: "bg-violet-50", iconColor: "text-violet-500" },
 }
 
