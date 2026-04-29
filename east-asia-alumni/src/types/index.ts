@@ -63,7 +63,8 @@ export interface PostLike {
 
 export interface Comment {
   id: string
-  post_id: string
+  post_id: string | null
+  event_id: string | null
   author_id: string
   content: string
   created_at: string
