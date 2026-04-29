@@ -5,6 +5,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import type { PostWithAuthor, CommentWithAuthor } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
+import { MentionInput, renderWithMentions, extractMentionUsernames } from "@/components/ui/MentionInput"
 
 type Props = {
   post: PostWithAuthor
@@ -62,14 +63,37 @@ export function PostCard({ post, userId }: Props) {
     e.preventDefault()
     if (!commentInput.trim() || commentSubmitting) return
     setCommentSubmitting(true)
+
     const { data } = await supabase
       .from("comments")
       .insert({ post_id: post.id, author_id: userId, content: commentInput.trim() })
       .select("*, author:profiles!comments_author_id_fkey(*)")
       .single()
+
     if (data) {
       setComments((prev) => [...prev, data as CommentWithAuthor])
       setCommentsCount((c) => c + 1)
+
+      // @メンション通知
+      const usernames = extractMentionUsernames(commentInput)
+      if (usernames.length > 0) {
+        const { data: mentioned } = await supabase
+          .from("profiles")
+          .select("id")
+          .in("username", usernames)
+          .neq("id", userId)
+        if (mentioned && mentioned.length > 0) {
+          await supabase.from("notifications").insert(
+            mentioned.map((p) => ({
+              user_id: p.id,
+              actor_id: userId,
+              type: "mention" as const,
+              entity_id: data.id,
+            }))
+          )
+        }
+      }
+
       setCommentInput("")
     }
     setCommentSubmitting(false)
@@ -87,15 +111,15 @@ export function PostCard({ post, userId }: Props) {
       </Link>
 
       {/* Content */}
-      <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">{post.content}</p>
+      <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
+        {renderWithMentions(post.content)}
+      </p>
 
       {/* Actions */}
       <div className="flex items-center gap-4 pt-1">
         <button
           onClick={toggleLike}
-          className={`flex items-center gap-1.5 text-sm transition-colors ${
-            liked ? "text-red-500" : "text-slate-400 hover:text-red-400"
-          }`}
+          className={`flex items-center gap-1.5 text-sm transition-colors ${liked ? "text-red-500" : "text-slate-400 hover:text-red-400"}`}
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} className="h-4 w-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
@@ -105,9 +129,7 @@ export function PostCard({ post, userId }: Props) {
 
         <button
           onClick={toggleComments}
-          className={`flex items-center gap-1.5 text-sm transition-colors ${
-            showComments ? "text-indigo-500" : "text-slate-400 hover:text-indigo-400"
-          }`}
+          className={`flex items-center gap-1.5 text-sm transition-colors ${showComments ? "text-indigo-500" : "text-slate-400 hover:text-indigo-400"}`}
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
@@ -119,7 +141,6 @@ export function PostCard({ post, userId }: Props) {
       {/* コメントセクション */}
       {showComments && (
         <div className="flex flex-col gap-3 pt-1 border-t border-slate-100">
-          {/* コメント一覧 */}
           {comments.length > 0 && (
             <div className="flex flex-col gap-3">
               {comments.map((c) => (
@@ -132,21 +153,22 @@ export function PostCard({ post, userId }: Props) {
                       <span className="text-xs font-semibold text-slate-800">{c.author.full_name}</span>
                     </Link>
                     <span className="text-xs text-slate-400 ml-1.5">{formatDate(c.created_at)}</span>
-                    <p className="text-sm text-slate-700 mt-0.5 whitespace-pre-wrap">{c.content}</p>
+                    <p className="text-sm text-slate-700 mt-0.5 whitespace-pre-wrap">
+                      {renderWithMentions(c.content)}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* コメント入力 */}
           <form onSubmit={handleAddComment} className="flex gap-2">
-            <input
-              type="text"
+            <MentionInput
               value={commentInput}
-              onChange={(e) => setCommentInput(e.target.value)}
-              placeholder="コメントを入力..."
+              onChange={setCommentInput}
+              placeholder="コメントを入力... （@でメンション）"
               className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              disabled={commentSubmitting}
             />
             <button
               type="submit"

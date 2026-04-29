@@ -5,6 +5,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import type { EventWithOrganizer, EventType, CommentWithAuthor, Profile } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
+import { MentionInput, renderWithMentions, extractMentionUsernames } from "@/components/ui/MentionInput"
 
 type Props = {
   event: EventWithOrganizer
@@ -301,6 +302,27 @@ export function EventCard({ event, userId, onUpdate }: Props) {
     if (data) {
       setComments((prev) => [...prev, data as CommentWithAuthor])
       setCommentsCount((c) => c + 1)
+
+      // @メンション通知
+      const usernames = extractMentionUsernames(commentInput)
+      if (usernames.length > 0) {
+        const { data: mentioned } = await supabase
+          .from("profiles")
+          .select("id")
+          .in("username", usernames)
+          .neq("id", userId)
+        if (mentioned && mentioned.length > 0) {
+          await supabase.from("notifications").insert(
+            mentioned.map((p) => ({
+              user_id: p.id,
+              actor_id: userId,
+              type: "mention" as const,
+              entity_id: data.id,
+            }))
+          )
+        }
+      }
+
       setCommentInput("")
     }
     setCommentSubmitting(false)
@@ -632,7 +654,9 @@ export function EventCard({ event, userId, onUpdate }: Props) {
                         )}
                       </Link>
                       <span className="text-xs text-slate-400 ml-1.5">{formatDate(c.created_at)}</span>
-                      <p className="text-sm text-slate-700 mt-0.5 whitespace-pre-wrap">{c.content}</p>
+                      <p className="text-sm text-slate-700 mt-0.5 whitespace-pre-wrap">
+                        {renderWithMentions(c.content)}
+                      </p>
                     </div>
                   </div>
                 )
@@ -640,12 +664,12 @@ export function EventCard({ event, userId, onUpdate }: Props) {
             </div>
           )}
           <form onSubmit={handleAddComment} className="flex gap-2">
-            <input
-              type="text"
+            <MentionInput
               value={commentInput}
-              onChange={(e) => setCommentInput(e.target.value)}
-              placeholder="コメントを入力..."
+              onChange={setCommentInput}
+              placeholder="コメントを入力... （@でメンション）"
               className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              disabled={commentSubmitting}
             />
             <button
               type="submit"

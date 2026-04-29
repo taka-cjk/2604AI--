@@ -1,0 +1,121 @@
+"use client"
+
+import { useState, useRef } from "react"
+import { createClient } from "@/lib/supabase/client"
+import type { Profile } from "@/types/index"
+
+type Props = {
+  value: string
+  onChange: (value: string) => void
+  onSubmit?: (e: React.FormEvent) => void
+  placeholder?: string
+  className?: string
+  disabled?: boolean
+}
+
+export function MentionInput({ value, onChange, onSubmit, placeholder, className, disabled }: Props) {
+  const supabase = createClient()
+  const [results, setResults] = useState<Profile[]>([])
+  const [showDropdown, setShowDropdown] = useState(false)
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function getMentionQuery(val: string, cursorPos: number): string | null {
+    const textBefore = val.slice(0, cursorPos)
+    const match = textBefore.match(/@(\w*)$/)
+    if (!match) return null
+    return match[1]
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value
+    onChange(val)
+
+    const cursorPos = e.target.selectionStart ?? val.length
+    const query = getMentionQuery(val, cursorPos)
+
+    if (query !== null && query.length >= 1) {
+      clearTimeout(searchTimeout.current)
+      searchTimeout.current = setTimeout(async () => {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, username, full_name, avatar_url")
+          .or(`username.ilike.%${query}%,full_name.ilike.%${query}%`)
+          .limit(6)
+        setResults((data ?? []) as Profile[])
+        setShowDropdown(true)
+      }, 200)
+    } else {
+      setShowDropdown(false)
+      setResults([])
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Escape") {
+      setShowDropdown(false)
+      setResults([])
+    }
+    if (e.key === "Enter" && !showDropdown && onSubmit) {
+      onSubmit(e as unknown as React.FormEvent)
+    }
+  }
+
+  function selectMention(profile: Profile) {
+    const cursorPos = inputRef.current?.selectionStart ?? value.length
+    const before = value.slice(0, cursorPos)
+    const after = value.slice(cursorPos)
+    const newBefore = before.replace(/@\w*$/, `@${profile.username} `)
+    onChange(newBefore + after)
+    setShowDropdown(false)
+    setResults([])
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }
+
+  return (
+    <div className="relative flex-1 min-w-0">
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+        placeholder={placeholder}
+        disabled={disabled}
+        className={className}
+      />
+      {showDropdown && results.length > 0 && (
+        <div className="absolute bottom-full mb-1 left-0 w-64 bg-white rounded-lg border border-slate-200 shadow-lg overflow-hidden z-20">
+          {results.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); selectMention(r) }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 text-left"
+            >
+              <div className="flex-1 min-w-0">
+                <span className="font-medium text-slate-800">{r.full_name}</span>
+                <span className="text-slate-400 text-xs ml-1.5">@{r.username}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function renderWithMentions(text: string): React.ReactNode {
+  const parts = text.split(/(@\w+)/g)
+  return parts.map((part, i) =>
+    /^@\w+$/.test(part)
+      ? <span key={i} className="text-indigo-600 font-medium">{part}</span>
+      : part
+  )
+}
+
+export function extractMentionUsernames(text: string): string[] {
+  const matches = text.match(/@(\w+)/g) ?? []
+  return [...new Set(matches.map((m) => m.slice(1)))]
+}
