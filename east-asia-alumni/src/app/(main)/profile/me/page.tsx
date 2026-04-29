@@ -5,6 +5,7 @@ import type { Profile, StudyAbroadHistory } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
 import { StudyTimeline } from "@/components/profile/StudyTimeline"
 import { AlumniOverlapList, type OverlapEntry } from "@/components/profile/AlumniOverlapList"
+import { WANTS_MAP } from "@/data/wants"
 
 function toDate(s: string | null | undefined): Date {
   return s ? new Date(s) : new Date()
@@ -95,6 +96,35 @@ export default async function MyProfilePage() {
           Edit profile
         </Link>
       </div>
+
+      {/* Tags */}
+      {profile.tags && profile.tags.filter((t: string) => t !== "seed").length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {profile.tags.filter((t: string) => t !== "seed").map((tag: string) => (
+            <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Wants */}
+      {profile.wants && profile.wants.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-slate-500 mb-2">🎯 今、求めていること</p>
+          <div className="flex flex-wrap gap-2">
+            {profile.wants.map((value: string) => {
+              const w = WANTS_MAP[value]
+              if (!w) return null
+              return (
+                <span key={value} className="rounded-full bg-indigo-50 border border-indigo-100 px-3 py-1 text-xs text-indigo-700">
+                  {w.emoji} {w.label}
+                </span>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* SNS links */}
       {profile.sns_links && (
