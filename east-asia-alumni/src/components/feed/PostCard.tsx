@@ -162,21 +162,23 @@ export function PostCard({ post, userId }: Props) {
             </div>
           )}
 
-          <form onSubmit={handleAddComment} className="flex gap-2">
+          <form onSubmit={handleAddComment} className="rounded-xl border border-slate-200 bg-white px-4 py-3 flex flex-col gap-2">
             <MentionInput
               value={commentInput}
               onChange={setCommentInput}
               placeholder="コメントを入力... （@でメンション）"
-              className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              className="w-full resize-none text-sm text-slate-800 placeholder-slate-400 outline-none leading-relaxed min-h-[48px]"
               disabled={commentSubmitting}
             />
-            <button
-              type="submit"
-              disabled={!commentInput.trim() || commentSubmitting}
-              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors"
-            >
-              送信
-            </button>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={!commentInput.trim() || commentSubmitting}
+                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+              >
+                送信
+              </button>
+            </div>
           </form>
         </div>
       )}

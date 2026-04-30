@@ -7,18 +7,17 @@ import type { Profile } from "@/types/index"
 type Props = {
   value: string
   onChange: (value: string) => void
-  onSubmit?: (e: React.FormEvent) => void
   placeholder?: string
   className?: string
   disabled?: boolean
 }
 
-export function MentionInput({ value, onChange, onSubmit, placeholder, className, disabled }: Props) {
+export function MentionInput({ value, onChange, placeholder, className, disabled }: Props) {
   const supabase = createClient()
   const [results, setResults] = useState<Profile[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   function getMentionQuery(val: string, cursorPos: number): string | null {
     const textBefore = val.slice(0, cursorPos)
@@ -27,7 +26,7 @@ export function MentionInput({ value, onChange, onSubmit, placeholder, className
     return match[1]
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const val = e.target.value
     onChange(val)
 
@@ -51,13 +50,10 @@ export function MentionInput({ value, onChange, onSubmit, placeholder, className
     }
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Escape") {
       setShowDropdown(false)
       setResults([])
-    }
-    if (e.key === "Enter" && !showDropdown && onSubmit) {
-      onSubmit(e as unknown as React.FormEvent)
     }
   }
 
@@ -74,9 +70,8 @@ export function MentionInput({ value, onChange, onSubmit, placeholder, className
 
   return (
     <div className="relative flex-1 min-w-0">
-      <input
+      <textarea
         ref={inputRef}
-        type="text"
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
