@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { PostWithAuthor, Profile } from "@/types/index"
+import { MentionInput, extractMentionUsernames } from "@/components/ui/MentionInput"
 
 type Props = {
   userId: string
@@ -52,6 +53,26 @@ export function CreatePostForm({ userId, onAdd }: Props) {
       })
     }
 
+    // @メンション通知
+    const usernames = extractMentionUsernames(content)
+    if (usernames.length > 0) {
+      const { data: mentioned } = await supabase
+        .from("profiles")
+        .select("id")
+        .in("username", usernames)
+        .neq("id", userId)
+      if (mentioned && mentioned.length > 0) {
+        await supabase.from("notifications").insert(
+          mentioned.map((p) => ({
+            user_id: p.id,
+            actor_id: userId,
+            type: "mention" as const,
+            entity_id: post.id,
+          }))
+        )
+      }
+    }
+
     setContent("")
     setLoading(false)
   }
@@ -61,13 +82,13 @@ export function CreatePostForm({ userId, onAdd }: Props) {
       onSubmit={handleSubmit}
       className="rounded-xl border border-slate-200 bg-white px-5 py-4 flex flex-col gap-3"
     >
-      <textarea
-        rows={3}
+      <MentionInput
         value={content}
-        onChange={(e) => setContent(e.target.value)}
-        maxLength={MAX}
+        onChange={(v) => setContent(v.slice(0, MAX))}
+        onSubmit={handleSubmit}
         placeholder="今どうしてる？留学の思い出、近況をシェアしよう"
         className="w-full resize-none text-sm text-slate-800 placeholder-slate-400 outline-none leading-relaxed"
+        disabled={loading}
       />
 
       <div className="flex items-center justify-between">
