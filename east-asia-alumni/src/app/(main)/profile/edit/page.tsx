@@ -44,6 +44,9 @@ export default function ProfileEditPage() {
   const [snsLinks, setSnsLinks] = useState<SnsLinks>({})
   const [selectedAreas, setSelectedAreas] = useState<string[]>([])
   const [selectedWants, setSelectedWants] = useState<string[]>([])
+  const [username, setUsername] = useState("")
+  const [usernameError, setUsernameError] = useState<string | null>(null)
+  const [usernameOk, setUsernameOk] = useState(false)
   const [profileLoading, setProfileLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
@@ -70,6 +73,7 @@ export default function ProfileEditPage() {
       setSelectedAreas(p.area ?? [])
       setSelectedWants(p.wants ?? [])
       setAvatarUrl(p.avatar_url)
+      setUsername(p.username ?? "")
 
       const { data: h } = await supabase
         .from("study_abroad_histories")
@@ -107,14 +111,44 @@ export default function ProfileEditPage() {
     setAvatarUploading(false)
   }
 
+  async function handleUsernameChange(val: string) {
+    const lower = val.toLowerCase()
+    setUsername(lower)
+    setUsernameOk(false)
+
+    if (lower === profile?.username) {
+      setUsernameError(null)
+      setUsernameOk(true)
+      return
+    }
+    if (!/^[a-z0-9_]{3,20}$/.test(lower)) {
+      setUsernameError("3〜20文字、英小文字・数字・アンダースコアのみ使えます")
+      return
+    }
+    setUsernameError(null)
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", lower)
+      .maybeSingle()
+    if (data) {
+      setUsernameError("このユーザー名はすでに使われています")
+    } else {
+      setUsernameOk(true)
+    }
+  }
+
   async function handleProfileSave(e: React.FormEvent) {
     e.preventDefault()
     if (!profile) return
+    if (usernameError) return
     setProfileError(null)
     setProfileLoading(true)
     setProfileSaved(false)
 
     const { error } = await supabase.from("profiles").update({
+      username,
       bio: profileForm.bio || null,
       home_country: profileForm.home_country || null,
       current_location: profileForm.current_location || null,
@@ -215,6 +249,29 @@ export default function ProfileEditPage() {
       <section>
         <h2 className="text-sm font-semibold text-slate-900 mb-4">Basic info</h2>
         <form onSubmit={handleProfileSave} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">ユーザー名</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">@</span>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => handleUsernameChange(e.target.value)}
+                className={`w-full rounded-lg border px-3 py-2 pl-7 text-sm outline-none focus:ring-2 focus:ring-indigo-100 ${
+                  usernameError ? "border-red-400 focus:border-red-400" :
+                  usernameOk && username !== profile?.username ? "border-green-400 focus:border-green-400" :
+                  "border-slate-300 focus:border-indigo-500"
+                }`}
+                placeholder="your_name"
+                maxLength={20}
+              />
+            </div>
+            {usernameError && <p className="mt-1 text-xs text-red-500">{usernameError}</p>}
+            {usernameOk && username !== profile?.username && (
+              <p className="mt-1 text-xs text-green-600">使用できます</p>
+            )}
+            <p className="mt-1 text-xs text-slate-400">3〜20文字、英小文字・数字・アンダースコアのみ</p>
+          </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Bio</label>
             <textarea
