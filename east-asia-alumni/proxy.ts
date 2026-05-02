@@ -49,7 +49,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  const authExemptPages = ['/auth/onboarding', '/auth/reset-password', '/auth/callback']
+  const authExemptPages = ['/auth/onboarding', '/auth/reset-password', '/auth/callback', '/auth/confirm']
   // Redirect authenticated users away from auth pages (except onboarding/reset-password/callback)
   if (user && isAuthPage && !authExemptPages.some((p) => pathname.startsWith(p))) {
     const redirectUrl = request.nextUrl.clone()

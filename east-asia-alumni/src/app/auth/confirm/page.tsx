@@ -1,0 +1,74 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
+import Link from "next/link"
+
+export default function ConfirmPage() {
+  const router = useRouter()
+  const [status, setStatus] = useState<"loading" | "expired" | "error">("loading")
+
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash) {
+      const params = new URLSearchParams(hash.substring(1))
+      const errorCode = params.get("error_code")
+      if (params.get("error")) {
+        setStatus(errorCode === "otp_expired" ? "expired" : "error")
+        return
+      }
+    }
+
+    // Supabase クライアントが hash 内のトークンを自動検出して
+    // セッションを確立したとき onAuthStateChange が発火する
+    const supabase = createClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        router.replace("/auth/reset-password")
+      } else if (event === "SIGNED_IN") {
+        router.replace("/feed")
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [router])
+
+  if (status === "expired") {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
+        <div className="text-4xl mb-4">⏰</div>
+        <h2 className="text-lg font-semibold text-slate-900 mb-2">リンクの有効期限が切れています</h2>
+        <p className="text-sm text-slate-500 mb-6">
+          パスワードリセットのリンクは一定時間で無効になります。<br />
+          もう一度リセットメールを送ってください。
+        </p>
+        <Link
+          href="/auth/forgot-password"
+          className="inline-block rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+        >
+          再度リセットメールを送る
+        </Link>
+      </div>
+    )
+  }
+
+  if (status === "error") {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
+        <div className="text-4xl mb-4">❌</div>
+        <h2 className="text-lg font-semibold text-slate-900 mb-2">認証に失敗しました</h2>
+        <p className="text-sm text-slate-500 mb-6">リンクが無効です。もう一度お試しください。</p>
+        <Link href="/auth/login" className="text-sm text-indigo-600 hover:underline">
+          ログインページへ
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
+      <p className="text-sm text-slate-500">認証中...</p>
+    </div>
+  )
+}
