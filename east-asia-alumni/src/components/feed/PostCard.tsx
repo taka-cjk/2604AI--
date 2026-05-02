@@ -74,7 +74,42 @@ export function PostCard({ post, userId }: Props) {
       setComments((prev) => [...prev, data as CommentWithAuthor])
       setCommentsCount((c) => c + 1)
 
-      // @メンション通知
+      // ① 投稿主に comment 通知
+      if (post.author_id !== userId) {
+        await supabase.from("notifications").insert({
+          user_id: post.author_id,
+          actor_id: userId,
+          type: "comment" as const,
+          entity_id: post.id,
+        })
+      }
+
+      // ② スレッド参加者に thread_reply 通知
+      const { data: existingComments } = await supabase
+        .from("comments").select("content").eq("post_id", post.id)
+      const allContent = [post.content, ...(existingComments ?? []).map((c) => c.content)].join(" ")
+      const threadUsernames = extractMentionUsernames(allContent)
+      const newMentionUsernames = new Set(extractMentionUsernames(commentInput))
+      if (threadUsernames.length > 0) {
+        const { data: threadUsers } = await supabase
+          .from("profiles").select("id, username")
+          .in("username", threadUsernames)
+          .neq("id", userId)
+          .neq("id", post.author_id)
+        const replyTargets = (threadUsers ?? []).filter((u) => !newMentionUsernames.has(u.username))
+        if (replyTargets.length > 0) {
+          await supabase.from("notifications").insert(
+            replyTargets.map((u) => ({
+              user_id: u.id,
+              actor_id: userId,
+              type: "thread_reply" as const,
+              entity_id: post.id,
+            }))
+          )
+        }
+      }
+
+      // ③ @メンション通知
       const usernames = extractMentionUsernames(commentInput)
       if (usernames.length > 0) {
         const { data: mentioned } = await supabase

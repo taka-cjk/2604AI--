@@ -31,8 +31,9 @@ function getNotificationText(n: NotificationWithActor): string {
     case "comment": return `${name} があなたの投稿にコメントしました`
     case "event_join": return `${name} があなたのイベントに参加しました`
     case "event_update": return `参加中のイベントの詳細が変更されました`
-    case "mention": return `${name} がコメントであなたをメンションしました`
+    case "mention": return `${name} があなたをメンションしました`
     case "message": return `${name} からメッセージが届きました`
+    case "thread_reply": return `${name} が参加中のスレッドにコメントしました`
   }
 }
 
@@ -44,6 +45,7 @@ const GROUP_CONFIG: Record<NotificationType, { label: string; iconBg: string; ic
   event_update: { label: "イベント変更", iconBg: "bg-amber-50", iconColor: "text-amber-500" },
   mention: { label: "メンション", iconBg: "bg-sky-50", iconColor: "text-sky-500" },
   message: { label: "メッセージ", iconBg: "bg-violet-50", iconColor: "text-violet-500" },
+  thread_reply: { label: "スレッド返信", iconBg: "bg-emerald-50", iconColor: "text-emerald-500" },
 }
 
 function TypeIcon({ type, className }: { type: NotificationType; className?: string }) {
@@ -82,6 +84,11 @@ function FollowBackButton({ actorId, userId }: { actorId: string; userId: string
     if (followed) return
     setFollowed(true)
     await supabase.from("follows").insert({ follower_id: userId, following_id: actorId })
+    await supabase.from("notifications").insert({
+      user_id: actorId,
+      actor_id: userId,
+      type: "follow" as const,
+    })
   }
 
   return (
@@ -113,6 +120,11 @@ export function NotificationList({ notifications, userId }: Props) {
       .update({ read: true })
       .eq("user_id", userId)
       .eq("read", false)
+  }
+
+  async function markGroupRead(ids: string[]) {
+    setItems((prev) => prev.map((n) => ids.includes(n.id) ? { ...n, read: true } : n))
+    await supabase.from("notifications").update({ read: true }).in("id", ids)
   }
 
   if (items.length === 0) {
@@ -176,7 +188,17 @@ export function NotificationList({ notifications, userId }: Props) {
                   </span>
                 )}
               </div>
-              <span className="text-xs text-slate-400">{formatDate(groupItems[0].created_at)}</span>
+              <div className="flex items-center gap-3">
+                {groupUnread > 0 && (
+                  <button
+                    onClick={() => markGroupRead(groupItems.filter((n) => !n.read).map((n) => n.id))}
+                    className="text-xs text-indigo-600 hover:underline"
+                  >
+                    既読にする
+                  </button>
+                )}
+                <span className="text-xs text-slate-400">{formatDate(groupItems[0].created_at)}</span>
+              </div>
             </div>
 
             {/* 通知行 */}

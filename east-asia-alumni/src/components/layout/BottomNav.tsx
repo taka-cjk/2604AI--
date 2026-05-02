@@ -51,7 +51,7 @@ const navItems = [
   },
 ]
 
-export function BottomNav() {
+export function BottomNav({ unreadCount = 0 }: { unreadCount?: number }) {
   const pathname = usePathname()
 
   return (
@@ -66,7 +66,12 @@ export function BottomNav() {
               isActive ? "text-indigo-600" : "text-slate-400"
             }`}
           >
-            {item.icon}
+            <span className="relative">
+              {item.icon}
+              {item.href === "/notifications" && unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
+              )}
+            </span>
             {item.label}
           </Link>
         )

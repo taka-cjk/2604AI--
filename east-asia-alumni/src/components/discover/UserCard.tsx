@@ -23,6 +23,11 @@ export function UserCard({ profile, userId }: Props) {
     setFollowing(next)
     if (next) {
       await supabase.from("follows").insert({ follower_id: userId, following_id: profile.id })
+      await supabase.from("notifications").insert({
+        user_id: profile.id,
+        actor_id: userId,
+        type: "follow" as const,
+      })
     } else {
       await supabase.from("follows").delete()
         .eq("follower_id", userId)
