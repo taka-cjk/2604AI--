@@ -5,11 +5,14 @@ import { usePathname } from "next/navigation"
 
 const navItems = [
   {
-    label: "Feed",
+    label: "Home",
     href: "/feed",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5v9.75c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75V10.5" />
+        <path strokeLinecap="round" d="M8 14.5h8" strokeWidth={1.2} />
+        <path strokeLinecap="round" d="M8.75 17h1.25M12 17h1.25M15.25 17h-1.25M8.75 19h1.25M12 19h1.25" strokeWidth={1.2} />
       </svg>
     ),
   },
@@ -51,28 +54,50 @@ const navItems = [
   },
 ]
 
-export function BottomNav({ unreadCount = 0 }: { unreadCount?: number }) {
+export function BottomNav({
+  unreadCount = 0,
+  avatarUrl,
+  fullName,
+}: {
+  unreadCount?: number
+  avatarUrl?: string | null
+  fullName?: string
+}) {
   const pathname = usePathname()
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 flex items-stretch" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+    <nav
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 flex items-stretch"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       {navItems.map((item) => {
         const isActive = pathname === item.href || (item.href !== "/profile/me" && pathname.startsWith(item.href))
+        const isProfile = item.href === "/profile/me"
+
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors ${
+            className={`flex flex-1 flex-col items-center justify-center py-3 transition-colors ${
               isActive ? "text-indigo-600" : "text-slate-400"
             }`}
           >
             <span className="relative">
-              {item.icon}
+              {isProfile && avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={fullName ?? "profile"}
+                  className={`h-7 w-7 rounded-full object-cover ${
+                    isActive ? "ring-2 ring-indigo-500" : "ring-1 ring-slate-200"
+                  }`}
+                />
+              ) : (
+                item.icon
+              )}
               {item.href === "/notifications" && unreadCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
               )}
             </span>
-            {item.label}
           </Link>
         )
       })}

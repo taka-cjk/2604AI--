@@ -6,11 +6,18 @@ import { createClient } from "@/lib/supabase/client"
 
 const navItems = [
   {
-    label: "Feed",
+    label: "Home",
     href: "/feed",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+        {/* 屋根 */}
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12" />
+        {/* 家の壁 */}
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5v9.75c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75V10.5" />
+        {/* カレンダー上段バー */}
+        <path strokeLinecap="round" d="M8 14.5h8" strokeWidth={1.2} />
+        {/* カレンダー日付マス */}
+        <path strokeLinecap="round" d="M8.75 17h1.25M12 17h1.25M15.25 17h-1.25M8.75 19h1.25M12 19h1.25" strokeWidth={1.2} />
       </svg>
     ),
   },

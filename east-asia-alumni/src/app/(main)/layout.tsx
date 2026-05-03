@@ -10,13 +10,24 @@ export default async function MainLayout({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   let unreadCount = 0
+  let avatarUrl: string | null = null
+  let fullName = ""
   if (user) {
-    const { count } = await supabase
-      .from("notifications")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("read", false)
+    const [{ count }, { data: profile }] = await Promise.all([
+      supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("read", false),
+      supabase
+        .from("profiles")
+        .select("avatar_url, full_name")
+        .eq("id", user.id)
+        .single(),
+    ])
     unreadCount = count ?? 0
+    avatarUrl = profile?.avatar_url ?? null
+    fullName = profile?.full_name ?? ""
   }
 
   return (
@@ -27,7 +38,7 @@ export default async function MainLayout({
           {children}
         </div>
       </main>
-      <BottomNav unreadCount={unreadCount} />
+      <BottomNav unreadCount={unreadCount} avatarUrl={avatarUrl} fullName={fullName} />
     </div>
   )
 }
