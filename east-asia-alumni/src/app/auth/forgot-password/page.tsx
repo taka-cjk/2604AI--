@@ -39,6 +39,13 @@ export default function ForgotPasswordPage() {
           <span className="font-medium text-slate-700">{email}</span> にパスワードリセット用のリンクを送りました。
           メールを確認してください。
         </p>
+        <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-left">
+          <p className="text-sm font-bold text-red-600 mb-1">⚠️ リンクを開く前に必ずお読みください</p>
+          <ul className="text-sm text-red-600 space-y-1 list-disc list-inside">
+            <li>リンクは<strong>今開いているブラウザと同じブラウザ</strong>にコピー&amp;ペーストして開いてください（他のブラウザやスマートフォンでは機能しません）</li>
+            <li>リンクは<strong>1回のみ有効</strong>です。開く前にURLをコピーしておくことをおすすめします</li>
+          </ul>
+        </div>
         <Link href="/auth/login" className="mt-6 inline-block text-sm text-indigo-600 hover:underline">
           ログインページに戻る
         </Link>
