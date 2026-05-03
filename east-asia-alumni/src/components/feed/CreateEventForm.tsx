@@ -13,12 +13,15 @@ type PriceMode = "none" | "tbd" | "amount"
 type RegMode = "none" | "tbd" | "na" | "url"
 
 const EVENT_TYPES: { value: EventType; label: string }[] = [
-  { value: "dinner", label: "Dinner" },
-  { value: "study", label: "Study" },
+  { value: "dinner",     label: "Dinner" },
+  { value: "study",      label: "Study" },
   { value: "networking", label: "Networking" },
-  { value: "sports", label: "Sports" },
-  { value: "culture", label: "Culture" },
-  { value: "other", label: "Other" },
+  { value: "sports",     label: "Sports" },
+  { value: "culture",    label: "Culture" },
+  { value: "morning",    label: "Morning" },
+  { value: "cafe",       label: "Cafe" },
+  { value: "lunch",      label: "Lunch" },
+  { value: "other",      label: "Other" },
 ]
 
 function toPriceDb(mode: PriceMode, amount: string): string | null {

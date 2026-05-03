@@ -17,30 +17,39 @@ type PriceMode = "none" | "tbd" | "amount"
 type RegMode = "none" | "tbd" | "na" | "url"
 
 const EVENT_TYPE_LABEL: Record<EventType, string> = {
-  dinner: "Dinner",
-  study: "Study",
+  dinner:     "Dinner",
+  study:      "Study",
   networking: "Networking",
-  sports: "Sports",
-  culture: "Culture",
-  other: "Other",
+  sports:     "Sports",
+  culture:    "Culture",
+  morning:    "Morning",
+  cafe:       "Cafe",
+  lunch:      "Lunch",
+  other:      "Other",
 }
 
 const EVENT_TYPE_COLOR: Record<EventType, string> = {
-  dinner: "bg-orange-100 text-orange-700",
-  study: "bg-blue-100 text-blue-700",
-  networking: "bg-purple-100 text-purple-700",
-  sports: "bg-green-100 text-green-700",
-  culture: "bg-pink-100 text-pink-700",
-  other: "bg-slate-100 text-slate-600",
+  dinner:     "bg-indigo-50 text-indigo-700",
+  study:      "bg-sky-100 text-sky-700",
+  networking: "bg-violet-50 text-violet-700",
+  sports:     "bg-emerald-50 text-emerald-700",
+  culture:    "bg-pink-50 text-pink-700",
+  morning:    "bg-amber-50 text-amber-700",
+  cafe:       "bg-orange-50 text-orange-700",
+  lunch:      "bg-lime-50 text-lime-700",
+  other:      "bg-slate-100 text-slate-600",
 }
 
 const EVENT_TYPES: { value: EventType; label: string }[] = [
-  { value: "dinner", label: "Dinner" },
-  { value: "study", label: "Study" },
+  { value: "dinner",     label: "Dinner" },
+  { value: "study",      label: "Study" },
   { value: "networking", label: "Networking" },
-  { value: "sports", label: "Sports" },
-  { value: "culture", label: "Culture" },
-  { value: "other", label: "Other" },
+  { value: "sports",     label: "Sports" },
+  { value: "culture",    label: "Culture" },
+  { value: "morning",    label: "Morning" },
+  { value: "cafe",       label: "Cafe" },
+  { value: "lunch",      label: "Lunch" },
+  { value: "other",      label: "Other" },
 ]
 
 function parsePriceMode(val: string | null): PriceMode {

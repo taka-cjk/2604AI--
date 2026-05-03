@@ -1,4 +1,4 @@
-export type EventType = 'dinner' | 'study' | 'networking' | 'sports' | 'culture' | 'other'
+export type EventType = 'dinner' | 'study' | 'networking' | 'sports' | 'culture' | 'morning' | 'cafe' | 'lunch' | 'other'
 export type NotificationType = 'follow' | 'like' | 'comment' | 'event_join' | 'event_update' | 'mention' | 'message' | 'thread_reply'
 
 export type SnsLinks = {
