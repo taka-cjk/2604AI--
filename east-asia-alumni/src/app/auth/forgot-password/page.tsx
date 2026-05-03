@@ -36,8 +36,8 @@ export default function ForgotPasswordPage() {
         <div className="text-3xl mb-3">📬</div>
         <h2 className="text-lg font-semibold text-slate-900 mb-2">メールを送信しました</h2>
         <p className="text-sm text-slate-500">
-          <span className="font-medium text-slate-700">{email}</span> にパスワードリセット用のリンクを送りました。
-          メールを確認してください。
+          <span className="font-medium text-slate-700">{email}</span> が登録されている場合、パスワードリセット用のリンクをお送りします。
+          メールボックスをご確認ください。
         </p>
         <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-left">
           <p className="text-sm font-bold text-red-600 mb-1">⚠️ リンクを開く前に必ずお読みください</p>
