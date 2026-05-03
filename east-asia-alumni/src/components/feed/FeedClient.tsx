@@ -6,6 +6,7 @@ import { PostCard } from "./PostCard"
 import { CreatePostForm } from "./CreatePostForm"
 import { EventCard } from "./EventCard"
 import { CreateEventForm } from "./CreateEventForm"
+import { EventCalendar } from "@/components/events/EventCalendar"
 
 type Tab = "feed" | "events"
 
@@ -33,11 +34,13 @@ export function FeedClient({ initialPosts, initialEvents, userId }: Props) {
     return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }, [posts, events])
 
-  // Events タブ: 開催日が近い順
-  const upcomingEvents = useMemo(
-    () => [...events].sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()),
-    [events]
-  )
+  function handleEventAdd(event: EventWithOrganizer) {
+    setEvents((prev) => [event, ...prev])
+  }
+
+  function handleEventUpdate(updated: EventWithOrganizer) {
+    setEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -78,9 +81,7 @@ export function FeedClient({ initialPosts, initialEvents, userId }: Props) {
                   key={`event-${item.data.id}`}
                   event={item.data}
                   userId={userId}
-                  onUpdate={(updated) =>
-                    setEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
-                  }
+                  onUpdate={handleEventUpdate}
                 />
               )
             )
@@ -88,29 +89,15 @@ export function FeedClient({ initialPosts, initialEvents, userId }: Props) {
         </div>
       )}
 
-      {/* Events タブ：イベント作成フォーム ＋ 開催日順 */}
+      {/* Events タブ：イベント作成フォーム ＋ カレンダー/リスト表示 */}
       {tab === "events" && (
         <div className="flex flex-col gap-4">
-          <CreateEventForm
+          <CreateEventForm userId={userId} onAdd={handleEventAdd} />
+          <EventCalendar
+            events={events}
             userId={userId}
-            onAdd={(event) => setEvents((prev) => [event, ...prev])}
+            onUpdate={handleEventUpdate}
           />
-          {upcomingEvents.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-8">
-              予定されているイベントはありません。作成してみよう！
-            </p>
-          ) : (
-            upcomingEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                userId={userId}
-                onUpdate={(updated) =>
-                  setEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
-                }
-              />
-            ))
-          )}
         </div>
       )}
     </div>
