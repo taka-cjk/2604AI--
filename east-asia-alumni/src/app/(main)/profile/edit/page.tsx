@@ -388,7 +388,7 @@ export default function ProfileEditPage() {
                         )
                       }
                     />
-                    {a.name}
+                    {a.label}
                   </label>
                 )
               })}

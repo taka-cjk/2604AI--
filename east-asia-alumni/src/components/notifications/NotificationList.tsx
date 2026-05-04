@@ -157,14 +157,14 @@ export function NotificationList({ notifications, userId }: Props) {
       <div className="flex items-center justify-between mb-2">
         {unreadCount > 0 ? (
           <span className="text-sm text-slate-500">
-            <span className="font-semibold text-indigo-600">{unreadCount}件</span> の未読通知
+            <span className="font-semibold text-indigo-600">{unreadCount}</span> unread
           </span>
         ) : (
-          <span className="text-sm text-slate-400">すべて既読です</span>
+          <span className="text-sm text-slate-400">All caught up</span>
         )}
         {unreadCount > 0 && (
           <button onClick={markAllRead} className="text-xs text-indigo-600 hover:underline">
-            すべて既読にする
+            Mark all as read
           </button>
         )}
       </div>
