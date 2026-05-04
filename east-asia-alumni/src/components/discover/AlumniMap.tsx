@@ -75,7 +75,7 @@ export default function AlumniMap({ profiles }: Props) {
     <div className="rounded-xl border border-slate-200 overflow-hidden">
       <div ref={mapRef} style={{ height: 480 }} />
       <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 text-xs text-slate-400">
-        {profiles.length} 人のアルムナイ分布 · エリア設定済み: {profiles.filter(p => p.area && p.area.length > 0).length} 人
+        {profiles.length} alumni · {profiles.filter(p => p.area && p.area.length > 0).length} with area set
       </div>
     </div>
   )

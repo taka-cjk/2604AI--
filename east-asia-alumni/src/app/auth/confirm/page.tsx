@@ -53,16 +53,16 @@ export default function ConfirmPage() {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
         <div className="text-4xl mb-4">⏰</div>
-        <h2 className="text-lg font-semibold text-slate-900 mb-2">リンクの有効期限が切れています</h2>
+        <h2 className="text-lg font-semibold text-slate-900 mb-2">Link has expired</h2>
         <p className="text-sm text-slate-500 mb-6">
-          パスワードリセットのリンクは一定時間で無効になります。<br />
-          もう一度リセットメールを送ってください。
+          Password reset links expire after a set time.<br />
+          Please request a new reset email.
         </p>
         <Link
           href="/auth/forgot-password"
           className="inline-block rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
         >
-          再度リセットメールを送る
+          Send reset email again
         </Link>
       </div>
     )
@@ -72,10 +72,10 @@ export default function ConfirmPage() {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
         <div className="text-4xl mb-4">❌</div>
-        <h2 className="text-lg font-semibold text-slate-900 mb-2">認証に失敗しました</h2>
-        <p className="text-sm text-slate-500 mb-6">リンクが無効です。もう一度お試しください。</p>
+        <h2 className="text-lg font-semibold text-slate-900 mb-2">Authentication failed</h2>
+        <p className="text-sm text-slate-500 mb-6">The link is invalid. Please try again.</p>
         <Link href="/auth/login" className="text-sm text-indigo-600 hover:underline">
-          ログインページへ
+          Go to login
         </Link>
       </div>
     )
@@ -83,7 +83,7 @@ export default function ConfirmPage() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
-      <p className="text-sm text-slate-500">認証中...</p>
+      <p className="text-sm text-slate-500">Authenticating...</p>
     </div>
   )
 }

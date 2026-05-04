@@ -66,7 +66,7 @@ export default function LoginPage() {
           <div className="flex items-center justify-between mb-1">
             <label className="block text-sm font-medium text-slate-700">Password</label>
             <Link href="/auth/forgot-password" className="text-xs text-indigo-600 hover:underline">
-              パスワードをお忘れですか？
+              Forgot your password?
             </Link>
           </div>
           <PasswordInput value={password} onChange={setPassword} placeholder="••••••••" required />

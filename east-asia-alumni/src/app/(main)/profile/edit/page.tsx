@@ -99,7 +99,7 @@ export default function ProfileEditPage() {
       .upload(`${profile.id}/avatar.${ext}`, file, { upsert: true })
 
     if (uploadError) {
-      alert("アップロードに失敗しました: " + uploadError.message)
+      alert("Upload failed: " + uploadError.message)
       setAvatarUploading(false)
       return
     }
@@ -123,7 +123,7 @@ export default function ProfileEditPage() {
       return
     }
     if (!/^[a-z0-9_]{3,20}$/.test(lower)) {
-      setUsernameError("3〜20文字、英小文字・数字・アンダースコアのみ使えます")
+      setUsernameError("3–20 characters: lowercase letters, numbers, underscores only")
       return
     }
     setUsernameError(null)
@@ -134,7 +134,7 @@ export default function ProfileEditPage() {
       .eq("username", lower)
       .maybeSingle()
     if (data) {
-      setUsernameError("このユーザー名はすでに使われています")
+      setUsernameError("This username is already taken")
     } else {
       setUsernameOk(true)
     }
@@ -219,19 +219,19 @@ export default function ProfileEditPage() {
             className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 hover:opacity-100 transition-opacity"
           >
             <span className="text-white text-xs font-medium">
-              {avatarUploading ? "..." : "変更"}
+              {avatarUploading ? "..." : "Edit"}
             </span>
           </button>
         </div>
         <div>
-          <p className="text-sm font-medium text-slate-700">プロフィール写真</p>
+          <p className="text-sm font-medium text-slate-700">Profile photo</p>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={avatarUploading}
             className="mt-1 text-xs text-indigo-600 hover:underline disabled:opacity-50"
           >
-            {avatarUploading ? "アップロード中..." : "画像を選択（JPG / PNG / WebP・2MB以内）"}
+            {avatarUploading ? "Uploading..." : "Choose image (JPG / PNG / WebP · max 2MB)"}
           </button>
           <input
             ref={fileInputRef}
@@ -248,7 +248,7 @@ export default function ProfileEditPage() {
         <h2 className="text-sm font-semibold text-slate-900 mb-4">Basic info</h2>
         <form onSubmit={handleProfileSave} className="flex flex-col gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">ユーザー名</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">@</span>
               <input
@@ -266,9 +266,9 @@ export default function ProfileEditPage() {
             </div>
             {usernameError && <p className="mt-1 text-xs text-red-500">{usernameError}</p>}
             {usernameOk && username !== profile?.username && (
-              <p className="mt-1 text-xs text-green-600">使用できます</p>
+              <p className="mt-1 text-xs text-green-600">Available</p>
             )}
-            <p className="mt-1 text-xs text-slate-400">3〜20文字、英小文字・数字・アンダースコアのみ</p>
+            <p className="mt-1 text-xs text-slate-400">3–20 chars, lowercase letters, numbers, underscores</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Bio</label>
@@ -371,7 +371,7 @@ export default function ProfileEditPage() {
           {/* Area（東京エリア） */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              よく出没するエリア（東京）
+              Your usual area (Tokyo)
             </label>
             <div className="flex flex-wrap gap-2">
               {TOKYO_AREAS.map((a) => {
@@ -398,7 +398,7 @@ export default function ProfileEditPage() {
           {/* Wants */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              今、求めていること
+              What you're looking for
             </label>
             <div className="flex flex-wrap gap-2">
               {WANTS_OPTIONS.map((w) => {
@@ -424,18 +424,18 @@ export default function ProfileEditPage() {
 
           {/* SNS links */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-3">SNS・連絡先</label>
+            <label className="block text-sm font-medium text-slate-700 mb-3">SNS & contacts</label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {([
-                { key: "x", label: "X (Twitter)", placeholder: "username（@なし）" },
+                { key: "x", label: "X (Twitter)", placeholder: "username (no @)" },
                 { key: "instagram", label: "Instagram", placeholder: "username" },
-                { key: "facebook", label: "Facebook", placeholder: "プロフィールURL or username" },
+                { key: "facebook", label: "Facebook", placeholder: "profile URL or username" },
                 { key: "wechat", label: "WeChat", placeholder: "WeChat ID" },
                 { key: "line", label: "LINE", placeholder: "LINE ID" },
                 { key: "kakao", label: "Kakao Talk", placeholder: "Kakao ID" },
                 { key: "note", label: "note", placeholder: "username" },
-                { key: "wantedly", label: "Wantedly", placeholder: "プロフィールURL" },
-                { key: "youtrust", label: "YOUTRUST", placeholder: "プロフィールURL" },
+                { key: "wantedly", label: "Wantedly", placeholder: "profile URL" },
+                { key: "youtrust", label: "YOUTRUST", placeholder: "profile URL" },
               ] as { key: keyof typeof snsLinks; label: string; placeholder: string }[]).map(({ key, label, placeholder }) => (
                 <div key={key} className="flex items-center gap-2">
                   <span className="w-24 shrink-0 text-xs text-slate-500">{label}</span>

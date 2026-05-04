@@ -135,7 +135,7 @@ export default async function MyProfilePage() {
       {/* Wants */}
       {profile.wants && profile.wants.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-slate-500 mb-2">🎯 今、求めていること</p>
+          <p className="text-xs font-semibold text-slate-500 mb-2">🎯 Looking for</p>
           <div className="flex flex-wrap gap-2">
             {profile.wants.map((value: string) => {
               const w = WANTS_MAP[value]
@@ -203,7 +203,7 @@ export default async function MyProfilePage() {
       {/* Study abroad timeline */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-slate-900">留学歴</h2>
+          <h2 className="text-sm font-semibold text-slate-900">Study history</h2>
           <Link href="/profile/edit#study" className="text-xs text-indigo-600 hover:underline">
             + Add
           </Link>
@@ -214,7 +214,7 @@ export default async function MyProfilePage() {
       {/* 同じ大学にいた人 */}
       {overlapEntries.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-slate-900 mb-4">同じ大学にいた人</h2>
+          <h2 className="text-sm font-semibold text-slate-900 mb-4">Alumni from the same university</h2>
           <AlumniOverlapList entries={overlapEntries} />
         </div>
       )}

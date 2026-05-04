@@ -33,9 +33,9 @@ const CATEGORY_OPTIONS: { value: EventType; label: string }[] = [
 ]
 
 const TIME_OPTIONS = [
-  { value: "morning",   label: "Morning (〜12:00)" },
-  { value: "afternoon", label: "Afternoon (12:00〜17:00)" },
-  { value: "evening",   label: "Evening (17:00〜)" },
+  { value: "morning",   label: "Morning (–12:00)" },
+  { value: "afternoon", label: "Afternoon (12:00–17:00)" },
+  { value: "evening",   label: "Evening (17:00–)" },
 ]
 
 const TYPE_COLORS: Record<EventType, string> = {
@@ -79,7 +79,12 @@ function matchesLocation(eventLocation: string | null, selected: string[]): bool
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })
+  const d = new Date(iso)
+  const h = d.getHours()
+  const ampm = h >= 12 ? "PM" : "AM"
+  const hour = h % 12 || 12
+  const min = String(d.getMinutes()).padStart(2, "0")
+  return `${hour}:${min} ${ampm}`
 }
 
 // ── FilterDropdown ─────────────────────────────────────────────────────────
@@ -201,7 +206,7 @@ function CompactEventItem({
           <p className="text-xs text-slate-500 mt-0.5">{event.location}</p>
         )}
         <p className="text-xs text-slate-400 mt-1">
-          {count}人参加{event.max_participants ? ` / 最大${event.max_participants}人` : ""} · 主催: @{event.organizer.username}
+          {count} attending{event.max_participants ? ` / max ${event.max_participants}` : ""} · Host: @{event.organizer.username}
         </p>
       </div>
       <button
@@ -215,7 +220,7 @@ function CompactEventItem({
             : "bg-indigo-600 text-white hover:bg-indigo-700"
         }`}
       >
-        {participating ? "参加済み" : isFull ? "満員" : "参加する"}
+        {participating ? "Going (Cancel)" : isFull ? "Full" : "Join"}
       </button>
     </div>
   )
@@ -312,19 +317,19 @@ export function EventCalendar({
       {/* Toolbar: filters + view toggle */}
       <div className="flex flex-wrap items-center gap-2">
         <FilterDropdown
-          label="場所"
+          label="Location"
           options={LOCATION_OPTIONS.map((l) => ({ value: l, label: l }))}
           selected={selectedLocations}
           onChange={setSelectedLocations}
         />
         <FilterDropdown
-          label="カテゴリ"
+          label="Category"
           options={CATEGORY_OPTIONS}
           selected={selectedCategories}
           onChange={setSelectedCategories}
         />
         <FilterDropdown
-          label="時間帯"
+          label="Time"
           options={TIME_OPTIONS}
           selected={selectedTimes}
           onChange={setSelectedTimes}
@@ -338,7 +343,7 @@ export function EventCalendar({
             }}
             className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1.5 transition-colors"
           >
-            クリア
+            Clear
           </button>
         )}
 
@@ -388,7 +393,7 @@ export function EventCalendar({
                 </svg>
               </button>
               <span className="text-sm font-semibold text-slate-800">
-                {year}年 {MONTH_NAMES[month]}
+                {MONTH_NAMES[month]} {year}
               </span>
               <button
                 onClick={nextMonth}
@@ -480,15 +485,15 @@ export function EventCalendar({
           {selectedDate && (
             <div className="flex flex-col gap-3">
               <h3 className="text-sm font-semibold text-slate-700">
-                {new Date(selectedDate + "T00:00:00").toLocaleDateString("ja-JP", {
-                  month: "long",
-                  day: "numeric",
-                  weekday: "short",
-                })}{" "}
-                のイベント
+                {(() => {
+                  const d = new Date(selectedDate + "T00:00:00")
+                  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+                  const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
+                  return `${months[d.getMonth()]} ${d.getDate()} (${weekdays[d.getDay()]}.) — Events`
+                })()}
               </h3>
               {selectedEvents.length === 0 ? (
-                <p className="text-sm text-slate-400 py-2">この日のイベントはありません</p>
+                <p className="text-sm text-slate-400 py-2">No events on this day</p>
               ) : (
                 <div className="flex flex-col gap-2">
                   {selectedEvents.map((e) => (
@@ -511,7 +516,7 @@ export function EventCalendar({
         <div className="flex flex-col gap-4">
           {sortedFilteredEvents.length === 0 ? (
             <p className="text-sm text-slate-400 text-center py-8">
-              {hasActiveFilter ? "条件に一致するイベントがありません" : "予定されているイベントはありません"}
+              {hasActiveFilter ? "No events match the filters" : "No upcoming events"}
             </p>
           ) : (
             sortedFilteredEvents.map((event) => (

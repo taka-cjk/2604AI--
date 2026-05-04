@@ -116,7 +116,7 @@ export default async function UserProfilePage({ params }: Props) {
       {/* Wants */}
       {profile.wants && profile.wants.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-slate-500 mb-2">🎯 今、求めていること</p>
+          <p className="text-xs font-semibold text-slate-500 mb-2">🎯 Looking for</p>
           <div className="flex flex-wrap gap-2">
             {profile.wants.map((value: string) => {
               const w = WANTS_MAP[value]
@@ -151,7 +151,7 @@ export default async function UserProfilePage({ params }: Props) {
       {/* Study timeline */}
       {typedHistories.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-slate-900 mb-4">留学歴</h2>
+          <h2 className="text-sm font-semibold text-slate-900 mb-4">Study history</h2>
           <StudyTimeline histories={typedHistories} />
         </div>
       )}
