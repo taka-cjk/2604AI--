@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import type { Profile, StudyAbroadHistory, SnsLinks } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
@@ -202,12 +203,9 @@ export default function ProfileEditPage() {
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-slate-900">Edit profile</h1>
-        <button
-          onClick={() => router.push("/profile/me")}
-          className="text-sm text-slate-500 hover:text-slate-700"
-        >
+        <Link href="/profile/me" className="text-sm text-slate-500 hover:text-slate-700">
           ← Back
-        </button>
+        </Link>
       </div>
 
       {/* Avatar upload */}
@@ -282,6 +280,62 @@ export default function ProfileEditPage() {
               placeholder="Tell people about yourself"
             />
           </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Words that represent you
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
+                    e.preventDefault()
+                    const newTag = tagInput.trim().replace(/^#/, "").replace(/,$/, "")
+                    if (newTag && !tags.includes(newTag)) setTags((t) => [...t, newTag])
+                    setTagInput("")
+                  }
+                }}
+                placeholder="e.g. Beijing, Startup, Exchange student"
+                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const newTag = tagInput.trim().replace(/^#/, "")
+                  if (newTag && !tags.includes(newTag)) setTags((t) => [...t, newTag])
+                  setTagInput("")
+                }}
+                disabled={!tagInput.trim()}
+                className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-40"
+              >
+                Add
+              </button>
+            </div>
+            {tags.filter(t => t !== "seed").length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {tags.filter(t => t !== "seed").map((tag) => (
+                  <span
+                    key={tag}
+                    className="flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs text-indigo-700"
+                  >
+                    #{tag}
+                    <button
+                      type="button"
+                      onClick={() => setTags((t) => t.filter((x) => x !== tag))}
+                      className="hover:text-indigo-900"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Home country</label>
@@ -363,51 +417,6 @@ export default function ProfileEditPage() {
                 )
               })}
             </div>
-          </div>
-
-          {/* Tags */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Words that represent you
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
-                    e.preventDefault()
-                    const newTag = tagInput.trim().replace(/^#/, "").replace(/,$/, "")
-                    if (newTag && !tags.includes(newTag)) {
-                      setTags((t) => [...t, newTag])
-                    }
-                    setTagInput("")
-                  }
-                }}
-                placeholder="e.g. Beijing, Startup, Exchange student (Enter to add)"
-                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-              />
-            </div>
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs text-indigo-700"
-                  >
-                    #{tag}
-                    <button
-                      type="button"
-                      onClick={() => setTags((t) => t.filter((x) => x !== tag))}
-                      className="hover:text-indigo-900"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* SNS links */}
