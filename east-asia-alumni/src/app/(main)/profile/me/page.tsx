@@ -120,7 +120,7 @@ export default async function MyProfilePage() {
       {profile.tags?.filter((t: string) => t !== "seed").length > 0 && (
         <div className="flex flex-wrap gap-2">
           {profile.tags.filter((t: string) => t !== "seed").map((tag: string) => (
-            <span key={tag} className="text-xs text-indigo-500 font-medium">#{tag}</span>
+            <span key={tag} className="text-xs text-slate-700 font-medium">#{tag}</span>
           ))}
         </div>
       )}

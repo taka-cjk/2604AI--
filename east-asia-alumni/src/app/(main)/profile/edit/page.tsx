@@ -284,28 +284,31 @@ export default function ProfileEditPage() {
           {/* Tags */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Words that represent you
+              #Words that represent you
             </label>
             <div className="flex gap-2">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
-                    e.preventDefault()
-                    const newTag = tagInput.trim().replace(/^#/, "").replace(/,$/, "")
-                    if (newTag && !tags.includes(newTag)) setTags((t) => [...t, newTag])
-                    setTagInput("")
-                  }
-                }}
-                placeholder="e.g. Beijing, Startup, Exchange student"
-                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-              />
+              <div className="flex flex-1 items-center rounded-lg border border-slate-300 px-3 py-2 text-sm focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100">
+                <span className="text-slate-400 select-none">#</span>
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value.replace(/^#/, ""))}
+                  onKeyDown={(e) => {
+                    if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
+                      e.preventDefault()
+                      const newTag = tagInput.trim().replace(/,$/, "")
+                      if (newTag && !tags.includes(newTag)) setTags((t) => [...t, newTag])
+                      setTagInput("")
+                    }
+                  }}
+                  placeholder="Beijing, #Startup, #Exchange student"
+                  className="flex-1 outline-none bg-transparent"
+                />
+              </div>
               <button
                 type="button"
                 onClick={() => {
-                  const newTag = tagInput.trim().replace(/^#/, "")
+                  const newTag = tagInput.trim()
                   if (newTag && !tags.includes(newTag)) setTags((t) => [...t, newTag])
                   setTagInput("")
                 }}
@@ -320,13 +323,13 @@ export default function ProfileEditPage() {
                 {tags.filter(t => t !== "seed").map((tag) => (
                   <span
                     key={tag}
-                    className="flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs text-indigo-700"
+                    className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700"
                   >
                     #{tag}
                     <button
                       type="button"
                       onClick={() => setTags((t) => t.filter((x) => x !== tag))}
-                      className="hover:text-indigo-900"
+                      className="hover:text-slate-900"
                     >
                       ×
                     </button>
