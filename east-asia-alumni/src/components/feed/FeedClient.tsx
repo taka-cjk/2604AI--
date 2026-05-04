@@ -70,7 +70,7 @@ export function FeedClient({ initialPosts, initialEvents, userId }: Props) {
           />
           {mixedFeed.length === 0 ? (
             <p className="text-sm text-slate-400 text-center py-8">
-              まだ投稿がありません。最初の投稿をしてみよう！
+              No posts yet. Be the first to share!
             </p>
           ) : (
             mixedFeed.map((item) =>

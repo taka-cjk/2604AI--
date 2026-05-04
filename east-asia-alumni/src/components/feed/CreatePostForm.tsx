@@ -32,7 +32,7 @@ export function CreatePostForm({ userId, onAdd }: Props) {
       .single()
 
     if (postError || !post) {
-      setError(postError?.message ?? "投稿に失敗しました")
+      setError(postError?.message ?? "Failed to post")
       setLoading(false)
       return
     }
@@ -85,7 +85,7 @@ export function CreatePostForm({ userId, onAdd }: Props) {
       <MentionInput
         value={content}
         onChange={(v) => setContent(v.slice(0, MAX))}
-        placeholder="今どうしてる？留学の思い出、近況をシェアしよう"
+        placeholder="What's on your mind? Share updates and memories"
         className="w-full resize-none text-sm text-slate-800 placeholder-slate-400 outline-none leading-relaxed min-h-[72px]"
         disabled={loading}
       />
@@ -100,7 +100,7 @@ export function CreatePostForm({ userId, onAdd }: Props) {
           disabled={loading || !content.trim()}
           className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors"
         >
-          {loading ? "投稿中..." : "投稿する"}
+          {loading ? "Posting..." : "Post"}
         </button>
       </div>
     </form>

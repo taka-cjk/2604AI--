@@ -9,7 +9,7 @@ type Props = {
   onAdd: (event: EventWithOrganizer) => void
 }
 
-type PriceMode = "none" | "tbd" | "amount"
+type PriceMode = "free" | "actual" | "amount" | "tbd"
 type RegMode = "none" | "tbd" | "na" | "url"
 
 const EVENT_TYPES: { value: EventType; label: string }[] = [
@@ -25,8 +25,9 @@ const EVENT_TYPES: { value: EventType; label: string }[] = [
 ]
 
 function toPriceDb(mode: PriceMode, amount: string): string | null {
-  if (mode === "none") return null
-  if (mode === "tbd") return "未定"
+  if (mode === "free") return "Free"
+  if (mode === "tbd") return "TBD"
+  if (mode === "actual") return "Actual Cost"
   return amount.trim() || null
 }
 
@@ -50,9 +51,9 @@ export function CreateEventForm({ userId, onAdd }: Props) {
     location: "",
     description: "",
     max_participants: "",
-    price_students_mode: "none" as PriceMode,
+    price_students_mode: "free" as PriceMode,
     price_students_amount: "",
-    price_other_mode: "none" as PriceMode,
+    price_other_mode: "free" as PriceMode,
     price_other_amount: "",
     reg_link_mode: "none" as RegMode,
     reg_link_url: "",
@@ -118,7 +119,7 @@ export function CreateEventForm({ userId, onAdd }: Props) {
       .single()
 
     if (eventError || !event) {
-      setError(eventError?.message ?? "イベント作成に失敗しました")
+      setError(eventError?.message ?? "Failed to create event")
       setLoading(false)
       return
     }
@@ -152,8 +153,8 @@ export function CreateEventForm({ userId, onAdd }: Props) {
     setForm({
       title: "", event_type: "networking", event_date: "", location: "", description: "",
       max_participants: "",
-      price_students_mode: "none", price_students_amount: "",
-      price_other_mode: "none", price_other_amount: "",
+      price_students_mode: "free", price_students_amount: "",
+      price_other_mode: "free", price_other_amount: "",
       reg_link_mode: "none", reg_link_url: "",
     })
     setCohosts([])
@@ -167,7 +168,7 @@ export function CreateEventForm({ userId, onAdd }: Props) {
         onClick={() => setOpen(true)}
         className="w-full rounded-xl border border-dashed border-slate-300 py-4 text-sm text-slate-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors"
       >
-        + イベントを作成する
+        + Create an event
       </button>
     )
   }
@@ -178,15 +179,15 @@ export function CreateEventForm({ userId, onAdd }: Props) {
       className="rounded-xl border border-slate-200 bg-white px-5 py-4 flex flex-col gap-4"
     >
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-900">新しいイベント</p>
+        <p className="text-sm font-semibold text-slate-900">New event</p>
         <button type="button" onClick={() => setOpen(false)} className="text-xs text-slate-400 hover:text-slate-600">
-          キャンセル
+          Cancel
         </button>
       </div>
 
       {/* Title */}
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">タイトル *</label>
+        <label className="block text-xs font-medium text-slate-600 mb-1">Title *</label>
         <input
           type="text" required value={form.title}
           onChange={(e) => update("title", e.target.value)}
@@ -198,14 +199,14 @@ export function CreateEventForm({ userId, onAdd }: Props) {
       {/* Type + Date */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">種類 *</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Type *</label>
           <select value={form.event_type} onChange={(e) => update("event_type", e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
             {EVENT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">日時 *</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Date & time *</label>
           <input type="datetime-local" required value={form.event_date}
             onChange={(e) => update("event_date", e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
@@ -216,16 +217,16 @@ export function CreateEventForm({ userId, onAdd }: Props) {
       {/* Location + Max */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">場所</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Location</label>
           <input type="text" value={form.location} onChange={(e) => update("location", e.target.value)}
-            placeholder="渋谷・オンライン 等"
+            placeholder="Shibuya, Online, etc."
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">最大参加人数</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Max attendees</label>
           <input type="number" min={1} value={form.max_participants}
-            onChange={(e) => update("max_participants", e.target.value)} placeholder="制限なし"
+            onChange={(e) => update("max_participants", e.target.value)} placeholder="No limit"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
           />
         </div>
@@ -233,16 +234,17 @@ export function CreateEventForm({ userId, onAdd }: Props) {
 
       {/* Price */}
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-2">参加費</label>
+        <label className="block text-xs font-medium text-slate-600 mb-2">Fee</label>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <p className="text-xs text-slate-500 mb-1">学生</p>
+            <p className="text-xs text-slate-500 mb-1">Students</p>
             <div className="flex gap-1.5">
               <select value={form.price_students_mode} onChange={(e) => update("price_students_mode", e.target.value)}
                 className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500">
-                <option value="none">なし</option>
-                <option value="tbd">未定</option>
-                <option value="amount">金額</option>
+                <option value="free">Free</option>
+                <option value="actual">Actual Cost</option>
+                <option value="amount">Fixed price</option>
+                <option value="tbd">TBD</option>
               </select>
               {form.price_students_mode === "amount" && (
                 <input type="number" min={0} value={form.price_students_amount}
@@ -253,13 +255,14 @@ export function CreateEventForm({ userId, onAdd }: Props) {
             </div>
           </div>
           <div>
-            <p className="text-xs text-slate-500 mb-1">一般</p>
+            <p className="text-xs text-slate-500 mb-1">General</p>
             <div className="flex gap-1.5">
               <select value={form.price_other_mode} onChange={(e) => update("price_other_mode", e.target.value)}
                 className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500">
-                <option value="none">なし</option>
-                <option value="tbd">未定</option>
-                <option value="amount">金額</option>
+                <option value="free">Free</option>
+                <option value="actual">Actual Cost</option>
+                <option value="amount">Fixed price</option>
+                <option value="tbd">TBD</option>
               </select>
               {form.price_other_mode === "amount" && (
                 <input type="number" min={0} value={form.price_other_amount}
@@ -274,14 +277,14 @@ export function CreateEventForm({ userId, onAdd }: Props) {
 
       {/* Registration Link */}
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">登録リンク</label>
+        <label className="block text-xs font-medium text-slate-600 mb-1">Registration link</label>
         <div className="flex gap-1.5 items-center flex-wrap">
           <select value={form.reg_link_mode} onChange={(e) => update("reg_link_mode", e.target.value)}
             className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500">
-            <option value="none">なし</option>
+            <option value="none">None</option>
             <option value="tbd">TBD</option>
-            <option value="na">NA（登録不要）</option>
-            <option value="url">URLを入力</option>
+            <option value="na">NA (no registration required)</option>
+            <option value="url">Enter URL</option>
           </select>
           {form.reg_link_mode === "url" && (
             <input type="url" value={form.reg_link_url}
@@ -294,7 +297,7 @@ export function CreateEventForm({ userId, onAdd }: Props) {
 
       {/* Co-hosts */}
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-2">共同ホスト</label>
+        <label className="block text-xs font-medium text-slate-600 mb-2">Co-hosts</label>
         {cohosts.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {cohosts.map((c) => (
@@ -310,7 +313,7 @@ export function CreateEventForm({ userId, onAdd }: Props) {
             type="text"
             value={cohostQuery}
             onChange={(e) => handleCohostSearch(e.target.value)}
-            placeholder="ユーザー名・名前で検索..."
+            placeholder="Search by username or name..."
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
           />
           {cohostResults.filter((r) => !cohosts.some((c) => c.id === r.id)).length > 0 && (
@@ -335,9 +338,9 @@ export function CreateEventForm({ userId, onAdd }: Props) {
 
       {/* Description */}
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">説明</label>
+        <label className="block text-xs font-medium text-slate-600 mb-1">Description</label>
         <textarea rows={2} value={form.description} onChange={(e) => update("description", e.target.value)}
-          maxLength={2000} placeholder="イベントの詳細を書いてください"
+          maxLength={2000} placeholder="Describe the event"
           className="w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
         />
       </div>
@@ -346,7 +349,7 @@ export function CreateEventForm({ userId, onAdd }: Props) {
 
       <button type="submit" disabled={loading || !form.title.trim() || !form.event_date}
         className="self-start rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors">
-        {loading ? "作成中..." : "イベントを作成"}
+        {loading ? "Creating..." : "Create event"}
       </button>
     </form>
   )

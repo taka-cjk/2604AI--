@@ -31,7 +31,7 @@ export default async function NotificationsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold text-slate-900">通知</h1>
+      <h1 className="text-xl font-semibold text-slate-900">Notifications</h1>
       <NotificationList notifications={notifications} userId={user.id} />
     </div>
   )

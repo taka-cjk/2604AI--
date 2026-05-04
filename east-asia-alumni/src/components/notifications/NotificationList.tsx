@@ -14,38 +14,38 @@ type Props = {
 function formatDate(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "今"
-  if (mins < 60) return `${mins}分前`
+  if (mins < 1) return "just now"
+  if (mins < 60) return `${mins}m ago`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}時間前`
+  if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}日前`
-  return new Date(iso).toLocaleDateString("ja-JP", { month: "short", day: "numeric" })
+  if (days < 7) return `${days}d ago`
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
 function getNotificationText(n: NotificationWithActor): string {
-  const name = n.actor?.full_name ?? "誰か"
+  const name = n.actor?.full_name ?? "Someone"
   switch (n.type) {
-    case "follow": return `${name} があなたをフォローしました`
-    case "like": return `${name} があなたの投稿にいいねしました`
-    case "comment": return `${name} があなたの投稿にコメントしました`
-    case "event_join": return `${name} があなたのイベントに参加しました`
-    case "event_update": return `参加中のイベントの詳細が変更されました`
-    case "mention": return `${name} があなたをメンションしました`
-    case "message": return `${name} からメッセージが届きました`
-    case "thread_reply": return `${name} が参加中のスレッドにコメントしました`
+    case "follow": return `${name} followed you`
+    case "like": return `${name} liked your post`
+    case "comment": return `${name} commented on your post`
+    case "event_join": return `${name} joined your event`
+    case "event_update": return `An event you joined has been updated`
+    case "mention": return `${name} mentioned you`
+    case "message": return `New message from ${name}`
+    case "thread_reply": return `${name} replied to a thread you're in`
   }
 }
 
 const GROUP_CONFIG: Record<NotificationType, { label: string; iconBg: string; iconColor: string }> = {
-  follow: { label: "新しいフォロワー", iconBg: "bg-indigo-50", iconColor: "text-indigo-500" },
-  like: { label: "いいね", iconBg: "bg-red-50", iconColor: "text-red-500" },
-  comment: { label: "コメント", iconBg: "bg-blue-50", iconColor: "text-blue-500" },
-  event_join: { label: "イベント参加", iconBg: "bg-teal-50", iconColor: "text-teal-500" },
-  event_update: { label: "イベント変更", iconBg: "bg-amber-50", iconColor: "text-amber-500" },
-  mention: { label: "メンション", iconBg: "bg-sky-50", iconColor: "text-sky-500" },
-  message: { label: "メッセージ", iconBg: "bg-violet-50", iconColor: "text-violet-500" },
-  thread_reply: { label: "スレッド返信", iconBg: "bg-emerald-50", iconColor: "text-emerald-500" },
+  follow: { label: "New follower", iconBg: "bg-indigo-50", iconColor: "text-indigo-500" },
+  like: { label: "Like", iconBg: "bg-red-50", iconColor: "text-red-500" },
+  comment: { label: "Comment", iconBg: "bg-blue-50", iconColor: "text-blue-500" },
+  event_join: { label: "Event join", iconBg: "bg-teal-50", iconColor: "text-teal-500" },
+  event_update: { label: "Event update", iconBg: "bg-amber-50", iconColor: "text-amber-500" },
+  mention: { label: "Mention", iconBg: "bg-sky-50", iconColor: "text-sky-500" },
+  message: { label: "Message", iconBg: "bg-violet-50", iconColor: "text-violet-500" },
+  thread_reply: { label: "Thread reply", iconBg: "bg-emerald-50", iconColor: "text-emerald-500" },
 }
 
 function TypeIcon({ type, className }: { type: NotificationType; className?: string }) {
@@ -101,7 +101,7 @@ function FollowBackButton({ actorId, userId }: { actorId: string; userId: string
           : "bg-indigo-600 text-white hover:bg-indigo-700"
       }`}
     >
-      {followed ? "フォロー中" : "フォローバック"}
+      {followed ? "Following" : "Follow back"}
     </button>
   )
 }
@@ -133,7 +133,7 @@ export function NotificationList({ notifications, userId }: Props) {
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-12 w-12 mb-3">
           <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
         </svg>
-        <p className="text-sm font-medium">通知はありません</p>
+        <p className="text-sm font-medium">No notifications</p>
       </div>
     )
   }

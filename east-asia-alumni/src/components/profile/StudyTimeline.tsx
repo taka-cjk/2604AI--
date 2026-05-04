@@ -45,7 +45,7 @@ function assignRows(items: StudyAbroadHistory[]): number[] {
 
 export function StudyTimeline({ histories }: Props) {
   if (histories.length === 0) {
-    return <p className="text-sm text-slate-400">まだ留学歴がありません。</p>
+    return <p className="text-sm text-slate-400">No study abroad history yet.</p>
   }
 
   // 開始日順にソート
@@ -124,7 +124,7 @@ export function StudyTimeline({ histories }: Props) {
               style={{ left: `${pct(new Date())}%` }}
             >
               <span className="absolute -top-5 -translate-x-1/2 text-[10px] text-pink-500 font-medium">
-                現在
+                Now
               </span>
             </div>
           )}
@@ -143,7 +143,7 @@ export function StudyTimeline({ histories }: Props) {
               : "?"
             const endLabel = h.end_date
               ? `${new Date(h.end_date).getFullYear()}.${String(new Date(h.end_date).getMonth() + 1).padStart(2, "0")}`
-              : "現在"
+              : "Present"
 
             return (
               <div

@@ -13,7 +13,7 @@ type Props = {
   onUpdate?: (event: EventWithOrganizer) => void
 }
 
-type PriceMode = "none" | "tbd" | "amount"
+type PriceMode = "free" | "actual" | "amount" | "tbd"
 type RegMode = "none" | "tbd" | "na" | "url"
 
 const EVENT_TYPE_LABEL: Record<EventType, string> = {
@@ -53,8 +53,9 @@ const EVENT_TYPES: { value: EventType; label: string }[] = [
 ]
 
 function parsePriceMode(val: string | null): PriceMode {
-  if (!val) return "none"
-  if (val === "未定") return "tbd"
+  if (!val || val === "Free") return "free"
+  if (val === "未定" || val === "TBD") return "tbd"
+  if (val === "実費" || val === "Actual Cost") return "actual"
   return "amount"
 }
 
@@ -66,8 +67,9 @@ function parseRegMode(val: string | null): RegMode {
 }
 
 function toPriceDb(mode: PriceMode, amount: string): string | null {
-  if (mode === "none") return null
-  if (mode === "tbd") return "未定"
+  if (mode === "free") return "Free"
+  if (mode === "tbd") return "TBD"
+  if (mode === "actual") return "Actual Cost"
   return amount.trim() || null
 }
 
@@ -80,7 +82,9 @@ function toRegDb(mode: RegMode, url: string): string | null {
 
 function formatPrice(val: string | null): string | null {
   if (!val) return null
-  if (val === "未定") return "未定"
+  if (val === "Free") return "Free"
+  if (val === "未定" || val === "TBD") return "TBD"
+  if (val === "実費" || val === "Actual Cost") return "Actual Cost"
   const num = parseInt(val)
   return isNaN(num) ? val : `¥${num.toLocaleString()}`
 }
@@ -93,21 +97,26 @@ function isoToDatetimeLocal(iso: string): string {
 }
 
 function formatEventDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ja-JP", {
-    month: "long", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit",
-  })
+  const d = new Date(iso)
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+  const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
+  const h = d.getHours()
+  const ampm = h >= 12 ? "PM" : "AM"
+  const hour = h % 12 || 12
+  const min = String(d.getMinutes()).padStart(2, "0")
+  return `${months[d.getMonth()]} ${d.getDate()} (${weekdays[d.getDay()]}.), ${hour}:${min} ${ampm}`
 }
 
 function formatDate(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "今"
-  if (mins < 60) return `${mins}分前`
+  if (mins < 1) return "just now"
+  if (mins < 60) return `${mins}m ago`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}時間前`
+  if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}日前`
-  return new Date(iso).toLocaleDateString("ja-JP", { month: "short", day: "numeric" })
+  if (days < 7) return `${days}d ago`
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
 export function EventCard({ event, userId, onUpdate }: Props) {
@@ -129,9 +138,9 @@ export function EventCard({ event, userId, onUpdate }: Props) {
     location: "",
     description: "",
     max_participants: "",
-    price_students_mode: "none" as PriceMode,
+    price_students_mode: "free" as PriceMode,
     price_students_amount: "",
-    price_other_mode: "none" as PriceMode,
+    price_other_mode: "free" as PriceMode,
     price_other_amount: "",
     reg_link_mode: "none" as RegMode,
     reg_link_url: "",
@@ -152,9 +161,9 @@ export function EventCard({ event, userId, onUpdate }: Props) {
       description: event.description ?? "",
       max_participants: event.max_participants?.toString() ?? "",
       price_students_mode: parsePriceMode(event.price_students),
-      price_students_amount: (event.price_students && event.price_students !== "未定") ? event.price_students : "",
+      price_students_amount: (event.price_students && !["Free", "未定", "TBD", "Actual Cost"].includes(event.price_students)) ? event.price_students : "",
       price_other_mode: parsePriceMode(event.price_other),
-      price_other_amount: (event.price_other && event.price_other !== "未定") ? event.price_other : "",
+      price_other_amount: (event.price_other && !["Free", "未定", "TBD", "Actual Cost"].includes(event.price_other)) ? event.price_other : "",
       reg_link_mode: parseRegMode(event.registration_link),
       reg_link_url: (event.registration_link && !["TBD", "NA"].includes(event.registration_link)) ? event.registration_link : "",
     })
@@ -226,7 +235,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
       .single()
 
     if (error || !updated) {
-      setEditError(error?.message ?? "更新に失敗しました")
+      setEditError(error?.message ?? "Failed to update")
       setEditLoading(false)
       return
     }
@@ -361,14 +370,14 @@ export function EventCard({ event, userId, onUpdate }: Props) {
       {showEdit ? (
         <form onSubmit={handleSave} className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-900">イベントを編集</p>
+            <p className="text-sm font-semibold text-slate-900">Edit event</p>
             <button type="button" onClick={() => setShowEdit(false)} className="text-xs text-slate-400 hover:text-slate-600">
-              キャンセル
+              Cancel
             </button>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">タイトル *</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Title *</label>
             <input type="text" required value={editForm.title} onChange={(e) => updateEdit("title", e.target.value)}
               maxLength={200}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
@@ -377,14 +386,14 @@ export function EventCard({ event, userId, onUpdate }: Props) {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">種類 *</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Type *</label>
               <select value={editForm.event_type} onChange={(e) => updateEdit("event_type", e.target.value)}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
                 {EVENT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">日時 *</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Date & time *</label>
               <input type="datetime-local" required value={editForm.event_date}
                 onChange={(e) => updateEdit("event_date", e.target.value)}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
@@ -394,16 +403,16 @@ export function EventCard({ event, userId, onUpdate }: Props) {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">場所</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Location</label>
               <input type="text" value={editForm.location} onChange={(e) => updateEdit("location", e.target.value)}
-                placeholder="渋谷・オンライン 等"
+                placeholder="Shibuya, Online, etc."
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">最大参加人数</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Max attendees</label>
               <input type="number" min={1} value={editForm.max_participants}
-                onChange={(e) => updateEdit("max_participants", e.target.value)} placeholder="制限なし"
+                onChange={(e) => updateEdit("max_participants", e.target.value)} placeholder="No limit"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
               />
             </div>
@@ -411,16 +420,17 @@ export function EventCard({ event, userId, onUpdate }: Props) {
 
           {/* Price edit */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-2">参加費</label>
+            <label className="block text-xs font-medium text-slate-600 mb-2">Fee</label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <p className="text-xs text-slate-500 mb-1">学生</p>
+                <p className="text-xs text-slate-500 mb-1">Students</p>
                 <div className="flex gap-1.5">
                   <select value={editForm.price_students_mode} onChange={(e) => updateEdit("price_students_mode", e.target.value)}
                     className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500">
-                    <option value="none">なし</option>
-                    <option value="tbd">未定</option>
-                    <option value="amount">金額</option>
+                    <option value="free">Free</option>
+                    <option value="actual">Actual Cost</option>
+                    <option value="amount">Fixed price</option>
+                    <option value="tbd">TBD</option>
                   </select>
                   {editForm.price_students_mode === "amount" && (
                     <input type="number" min={0} value={editForm.price_students_amount}
@@ -431,13 +441,14 @@ export function EventCard({ event, userId, onUpdate }: Props) {
                 </div>
               </div>
               <div>
-                <p className="text-xs text-slate-500 mb-1">一般</p>
+                <p className="text-xs text-slate-500 mb-1">General</p>
                 <div className="flex gap-1.5">
                   <select value={editForm.price_other_mode} onChange={(e) => updateEdit("price_other_mode", e.target.value)}
                     className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500">
-                    <option value="none">なし</option>
-                    <option value="tbd">未定</option>
-                    <option value="amount">金額</option>
+                    <option value="free">Free</option>
+                    <option value="actual">Actual Cost</option>
+                    <option value="amount">Fixed price</option>
+                    <option value="tbd">TBD</option>
                   </select>
                   {editForm.price_other_mode === "amount" && (
                     <input type="number" min={0} value={editForm.price_other_amount}
@@ -452,14 +463,14 @@ export function EventCard({ event, userId, onUpdate }: Props) {
 
           {/* Registration link edit */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">登録リンク</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Registration link</label>
             <div className="flex gap-1.5 items-center flex-wrap">
               <select value={editForm.reg_link_mode} onChange={(e) => updateEdit("reg_link_mode", e.target.value)}
                 className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500">
-                <option value="none">なし</option>
+                <option value="none">None</option>
                 <option value="tbd">TBD</option>
-                <option value="na">NA（登録不要）</option>
-                <option value="url">URLを入力</option>
+                <option value="na">NA (no registration required)</option>
+                <option value="url">Enter URL</option>
               </select>
               {editForm.reg_link_mode === "url" && (
                 <input type="url" value={editForm.reg_link_url}
@@ -472,7 +483,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
 
           {/* Co-hosts edit */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-2">共同ホスト</label>
+            <label className="block text-xs font-medium text-slate-600 mb-2">Co-hosts</label>
             {editCohosts.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {editCohosts.map((c) => (
@@ -488,7 +499,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
                 type="text"
                 value={cohostQuery}
                 onChange={(e) => handleCohostSearch(e.target.value)}
-                placeholder="ユーザー名・名前で検索..."
+                placeholder="Search by username or name..."
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
               />
               {cohostResults.filter((r) => !editCohosts.some((c) => c.id === r.id)).length > 0 && (
@@ -508,7 +519,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">説明</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Description</label>
             <textarea rows={2} value={editForm.description} onChange={(e) => updateEdit("description", e.target.value)}
               maxLength={2000}
               className="w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
@@ -519,7 +530,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
 
           <button type="submit" disabled={editLoading || !editForm.title.trim() || !editForm.event_date}
             className="self-start rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors">
-            {editLoading ? "保存中..." : "保存する"}
+            {editLoading ? "Saving..." : "Save"}
           </button>
         </form>
       ) : (
@@ -536,7 +547,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
             </div>
             {isOrganizer && (
               <button onClick={startEdit} className="shrink-0 text-xs text-slate-400 hover:text-indigo-600 transition-colors">
-                編集
+                Edit
               </button>
             )}
           </div>
@@ -564,9 +575,9 @@ export function EventCard({ event, userId, onUpdate }: Props) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 4.5h.008v.008h-.008V13.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                 </svg>
                 <span>
-                  {priceStudents && `学生 ${priceStudents}`}
-                  {priceStudents && priceOther && "　/　"}
-                  {priceOther && `一般 ${priceOther}`}
+                  {priceStudents && `Students ${priceStudents}`}
+                  {priceStudents && priceOther && " / "}
+                  {priceOther && `General ${priceOther}`}
                 </span>
               </div>
             )}
@@ -576,12 +587,12 @@ export function EventCard({ event, userId, onUpdate }: Props) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
                 </svg>
                 {event.registration_link === "TBD" ? (
-                  <span className="text-slate-400">登録リンク: TBD</span>
+                  <span className="text-slate-400">Registration link: TBD</span>
                 ) : event.registration_link === "NA" ? (
-                  <span>事前登録不要</span>
+                  <span>No registration required</span>
                 ) : (
                   <a href={event.registration_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
-                    登録はこちら ↗
+                    Register here ↗
                   </a>
                 )}
               </div>
@@ -599,14 +610,14 @@ export function EventCard({ event, userId, onUpdate }: Props) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
                 </svg>
                 <span>
-                  {count}人参加{event.max_participants ? ` / 最大${event.max_participants}人` : ""}
+                  {count} attending{event.max_participants ? ` / max ${event.max_participants}` : ""}
                 </span>
                 <span className="text-slate-300">·</span>
-                <span>主催: @{event.organizer.username}</span>
+                <span>Host: @{event.organizer.username}</span>
               </div>
               {(event.cohosts ?? []).length > 0 && (
                 <p className="text-xs text-slate-400 pl-5">
-                  共同ホスト: {event.cohosts.map((c) => `@${c.username}`).join("、")}
+                  Co-hosts: {event.cohosts.map((c) => `@${c.username}`).join(", ")}
                 </p>
               )}
             </div>
@@ -633,7 +644,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
                     : "bg-indigo-600 text-white hover:bg-indigo-700"
                 }`}
               >
-                {participating ? "参加済み（取消）" : isFull ? "満員" : "参加する"}
+                {participating ? "Going (Cancel)" : isFull ? "Full" : "Join"}
               </button>
             </div>
           </div>
@@ -659,7 +670,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
                       <Link href={`/profile/${c.author_id}`} className="hover:underline inline-flex items-center gap-1.5">
                         <span className="text-xs font-semibold text-slate-800">{c.author.full_name}</span>
                         {isHost && (
-                          <span className="text-[10px] font-medium text-purple-600 bg-purple-100 rounded-full px-1.5 py-0.5 leading-none">ホスト</span>
+                          <span className="text-[10px] font-medium text-purple-600 bg-purple-100 rounded-full px-1.5 py-0.5 leading-none">Host</span>
                         )}
                       </Link>
                       <span className="text-xs text-slate-400 ml-1.5">{formatDate(c.created_at)}</span>
@@ -676,7 +687,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
             <MentionInput
               value={commentInput}
               onChange={setCommentInput}
-              placeholder="コメントを入力... （@でメンション）"
+              placeholder="Add a comment... (@mention)"
               className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
               disabled={commentSubmitting}
             />
@@ -685,7 +696,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
               disabled={!commentInput.trim() || commentSubmitting}
               className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors"
             >
-              送信
+              Send
             </button>
           </form>
         </div>

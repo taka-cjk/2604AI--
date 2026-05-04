@@ -62,7 +62,7 @@ export function UserCard({ profile, userId }: Props) {
               : "bg-indigo-600 text-white hover:bg-indigo-700"
           }`}
         >
-          {following ? "フォロー中" : "フォロー"}
+          {following ? "Following" : "Follow"}
         </button>
       </div>
 

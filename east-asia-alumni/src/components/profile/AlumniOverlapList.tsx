@@ -16,7 +16,7 @@ type Props = {
 
 function formatPeriod(h: StudyAbroadHistory): string {
   const fmt = (d: string | null) =>
-    d ? `${new Date(d).getFullYear()}.${String(new Date(d).getMonth() + 1).padStart(2, "0")}` : "現在"
+    d ? `${new Date(d).getFullYear()}.${String(new Date(d).getMonth() + 1).padStart(2, "0")}` : "Present"
   return `${fmt(h.start_date)} – ${fmt(h.end_date)}`
 }
 
@@ -36,7 +36,7 @@ export function AlumniOverlapList({ entries }: Props) {
       {[...grouped.entries()].map(([university, group]) => (
         <div key={university}>
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-            {university} で同じ時期にいた人
+            At the same time at {university}
           </p>
           <div className="flex flex-col gap-2">
             {group.map(({ profile, history, overlapWith }) => (
@@ -53,7 +53,7 @@ export function AlumniOverlapList({ entries }: Props) {
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-[10px] text-indigo-500 font-medium">あなたと重複</p>
+                  <p className="text-[10px] text-indigo-500 font-medium">Overlapping</p>
                   <p className="text-[10px] text-slate-400">{formatPeriod(overlapWith)}</p>
                 </div>
               </div>

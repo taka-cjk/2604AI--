@@ -10,7 +10,7 @@ const AlumniMap = dynamic(() => import("./AlumniMap"), {
   ssr: false,
   loading: () => (
     <div className="rounded-xl border border-slate-200 flex items-center justify-center" style={{ height: 480 }}>
-      <p className="text-sm text-slate-400">地図を読み込み中...</p>
+      <p className="text-sm text-slate-400">Loading map...</p>
     </div>
   ),
 })
@@ -48,7 +48,7 @@ export function DiscoverClient({ profiles, userId }: Props) {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-semibold text-slate-900 mb-1">Discover People</h1>
-        <p className="text-sm text-slate-500">東アジアのアルムナイを見つけよう</p>
+        <p className="text-sm text-slate-500">Connect with East Asian alumni</p>
       </div>
 
       {/* タブ */}
@@ -61,7 +61,7 @@ export function DiscoverClient({ profiles, userId }: Props) {
               tab === t ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
             }`}
           >
-            {t === "list" ? "一覧" : "マップ"}
+            {t === "list" ? "List" : "Map"}
           </button>
         ))}
       </div>
@@ -74,7 +74,7 @@ export function DiscoverClient({ profiles, userId }: Props) {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="名前 / username で検索"
+              placeholder="Search by name or username"
               className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
             />
             {countries.length > 0 && (
@@ -83,7 +83,7 @@ export function DiscoverClient({ profiles, userId }: Props) {
                 onChange={(e) => setCountryFilter(e.target.value)}
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
               >
-                <option value="">すべての国</option>
+                <option value="">All countries</option>
                 {countries.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -94,18 +94,18 @@ export function DiscoverClient({ profiles, userId }: Props) {
               onChange={(e) => setWantsFilter(e.target.value)}
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
             >
-              <option value="">やりたいこと（すべて）</option>
+              <option value="">All interests</option>
               {WANTS_OPTIONS.map((w) => (
                 <option key={w.value} value={w.value}>{w.emoji} {w.label}</option>
               ))}
             </select>
           </div>
 
-          <p className="text-xs text-slate-400">{filtered.length}人のアルムナイ</p>
+          <p className="text-xs text-slate-400">{filtered.length} alumni</p>
 
           {filtered.length === 0 ? (
             <p className="text-sm text-slate-400 text-center py-8">
-              {query || countryFilter ? "条件に一致するユーザーが見つかりませんでした" : "まだ他のユーザーがいません"}
+              {query || countryFilter ? "No users match your criteria" : "No other users yet"}
             </p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
