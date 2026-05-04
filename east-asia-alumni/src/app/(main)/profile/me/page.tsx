@@ -106,13 +106,6 @@ export default async function MyProfilePage() {
             <h1 className="text-xl font-semibold text-slate-900">{profile.full_name}</h1>
             <p className="text-sm text-slate-500">@{profile.username}</p>
             {profile.bio && <p className="mt-2 text-sm text-slate-700">{profile.bio}</p>}
-            {profile.tags?.filter((t: string) => t !== "seed").length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {profile.tags.filter((t: string) => t !== "seed").map((tag: string) => (
-                  <span key={tag} className="text-xs text-indigo-500 font-medium">#{tag}</span>
-                ))}
-              </div>
-            )}
           </div>
         </div>
         <Link
@@ -122,6 +115,15 @@ export default async function MyProfilePage() {
           Edit profile
         </Link>
       </div>
+
+      {/* Tags */}
+      {profile.tags?.filter((t: string) => t !== "seed").length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {profile.tags.filter((t: string) => t !== "seed").map((tag: string) => (
+            <span key={tag} className="text-xs text-indigo-500 font-medium">#{tag}</span>
+          ))}
+        </div>
+      )}
 
       {/* Member badge */}
       {profile.member_number != null && (
