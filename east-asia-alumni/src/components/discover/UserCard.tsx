@@ -40,13 +40,13 @@ export function UserCard({ profile, userId }: Props) {
 
   return (
     <div
-      className="rounded-xl border border-slate-200 bg-white px-5 py-4 flex flex-col gap-3 cursor-pointer hover:border-indigo-200 hover:shadow-sm transition-all"
+      className="rounded-xl border border-slate-200 bg-white px-4 py-3 flex flex-col gap-2 cursor-pointer hover:border-indigo-200 hover:shadow-sm transition-all"
       onClick={() => router.push(`/profile/${profile.id}`)}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <Avatar name={profile.full_name} avatarUrl={profile.avatar_url} size="md" />
+          <Avatar name={profile.full_name} avatarUrl={profile.avatar_url} size="sm" />
           <div className="min-w-0">
             <p className="text-sm font-semibold text-slate-900 truncate">{profile.full_name}</p>
             <p className="text-xs text-slate-400">@{profile.username}</p>
@@ -79,29 +79,23 @@ export function UserCard({ profile, userId }: Props) {
 
       {/* Bio */}
       {profile.bio && (
-        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">{profile.bio}</p>
+        <p className="text-xs text-slate-600 line-clamp-1 leading-relaxed">{profile.bio}</p>
       )}
 
-      {/* Tags */}
-      {displayTags.length > 0 && (
+      {/* Tags + Wants（1行にまとめる） */}
+      {(displayTags.length > 0 || displayWants.length > 0) && (
         <div className="flex flex-wrap gap-1.5">
-          {displayTags.slice(0, 5).map((tag) => (
+          {displayTags.slice(0, 4).map((tag) => (
             <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">
               {tag}
             </span>
           ))}
-        </div>
-      )}
-
-      {/* Wants */}
-      {displayWants.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
           {displayWants.map((value) => {
             const w = WANTS_MAP[value]
             if (!w) return null
             return (
-              <span key={value} className="rounded-full bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 text-xs text-indigo-600">
-                {w.emoji} {w.label}
+              <span key={value} title={w.label} className="rounded-full bg-indigo-50 border border-indigo-100 px-2 py-0.5 text-xs">
+                {w.emoji}
               </span>
             )
           })}
