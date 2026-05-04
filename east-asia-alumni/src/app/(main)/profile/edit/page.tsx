@@ -368,7 +368,7 @@ export default function ProfileEditPage() {
           {/* Tags */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              興味・繋がりたい人
+              Words that represent you
             </label>
             <div className="flex gap-2">
               <input
@@ -378,14 +378,14 @@ export default function ProfileEditPage() {
                 onKeyDown={(e) => {
                   if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
                     e.preventDefault()
-                    const newTag = tagInput.trim().replace(/,$/, "")
+                    const newTag = tagInput.trim().replace(/^#/, "").replace(/,$/, "")
                     if (newTag && !tags.includes(newTag)) {
                       setTags((t) => [...t, newTag])
                     }
                     setTagInput("")
                   }
                 }}
-                placeholder="例: 留学生支援・北京・起業家（Enterで追加）"
+                placeholder="e.g. Beijing, Startup, Exchange student (Enter to add)"
                 className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
               />
             </div>
@@ -396,7 +396,7 @@ export default function ProfileEditPage() {
                     key={tag}
                     className="flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs text-indigo-700"
                   >
-                    {tag}
+                    #{tag}
                     <button
                       type="button"
                       onClick={() => setTags((t) => t.filter((x) => x !== tag))}

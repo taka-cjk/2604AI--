@@ -86,9 +86,7 @@ export function UserCard({ profile, userId }: Props) {
       {(displayTags.length > 0 || displayWants.length > 0) && (
         <div className="flex flex-wrap gap-1.5">
           {displayTags.slice(0, 4).map((tag) => (
-            <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">
-              {tag}
-            </span>
+            <span key={tag} className="text-xs text-indigo-500 font-medium">#{tag}</span>
           ))}
           {displayWants.map((value) => {
             const w = WANTS_MAP[value]

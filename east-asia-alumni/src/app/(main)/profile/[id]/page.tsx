@@ -8,6 +8,27 @@ import { FollowButton } from "@/components/profile/FollowButton"
 
 type Props = { params: Promise<{ id: string }> }
 
+function ordinal(n: number) {
+  const s = ["th", "st", "nd", "rd"]
+  const v = n % 100
+  return n + (s[(v - 20) % 10] || s[v] || s[0])
+}
+function formatJoinDate(iso: string) {
+  const d = new Date(iso)
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+  return `${months[d.getMonth()]} ${ordinal(d.getDate())} ${d.getFullYear()}`
+}
+function formatTenure(iso: string) {
+  const joined = new Date(iso)
+  const now = new Date()
+  const total = (now.getFullYear() - joined.getFullYear()) * 12 + (now.getMonth() - joined.getMonth())
+  const y = Math.floor(total / 12)
+  const m = total % 12
+  if (y === 0) return `${m}m`
+  if (m === 0) return `${y}y`
+  return `${y}y ${m}m`
+}
+
 export default async function UserProfilePage({ params }: Props) {
   const { id } = await params
   const supabase = await createClient()
@@ -62,6 +83,13 @@ export default async function UserProfilePage({ params }: Props) {
             <h1 className="text-xl font-semibold text-slate-900">{profile.full_name}</h1>
             <p className="text-sm text-slate-500">@{profile.username}</p>
             {profile.bio && <p className="mt-2 text-sm text-slate-700">{profile.bio}</p>}
+            {profile.tags?.filter((t: string) => t !== "seed").length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {profile.tags.filter((t: string) => t !== "seed").map((tag: string) => (
+                  <span key={tag} className="text-xs text-indigo-500 font-medium">#{tag}</span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <FollowButton targetId={id} currentUserId={user.id} initialFollowing={isFollowing} />
@@ -78,15 +106,11 @@ export default async function UserProfilePage({ params }: Props) {
         </p>
       )}
 
-      {/* Tags */}
-      {profile.tags && profile.tags.filter((t: string) => t !== "seed").length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {profile.tags.filter((t: string) => t !== "seed").map((tag: string) => (
-            <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
-              {tag}
-            </span>
-          ))}
-        </div>
+      {/* Member badge */}
+      {profile.member_number != null && (
+        <p className="text-xs text-slate-400">
+          Member #{profile.member_number} · Joined {formatJoinDate(profile.created_at)} · {formatTenure(profile.created_at)}
+        </p>
       )}
 
       {/* Wants */}

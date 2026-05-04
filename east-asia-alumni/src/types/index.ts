@@ -26,6 +26,7 @@ export interface Profile {
   sns_links: SnsLinks | null
   area: string[] | null
   wants: string[] | null
+  member_number?: number | null
   created_at: string
   updated_at: string
 }
