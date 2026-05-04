@@ -24,8 +24,6 @@ function formatTenure(iso: string) {
   const total = (now.getFullYear() - joined.getFullYear()) * 12 + (now.getMonth() - joined.getMonth())
   const y = Math.floor(total / 12)
   const m = total % 12
-  if (y === 0) return `${m}m`
-  if (m === 0) return `${y}y`
   return `${y}y ${m}m`
 }
 
