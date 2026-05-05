@@ -2,6 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 
 const navItems = [
   {
@@ -58,12 +60,38 @@ export function BottomNav({
   unreadCount = 0,
   avatarUrl,
   fullName,
+  userId,
 }: {
   unreadCount?: number
   avatarUrl?: string | null
   fullName?: string
+  userId?: string
 }) {
   const pathname = usePathname()
+  const [localUnread, setLocalUnread] = useState(unreadCount)
+
+  // レイアウト再描画（ページ遷移）時にサーバー値と同期
+  useEffect(() => {
+    setLocalUnread(unreadCount)
+  }, [unreadCount])
+
+  // Realtime: 自分宛ての通知が届いたら即座にバッジを更新
+  useEffect(() => {
+    if (!userId) return
+    const supabase = createClient()
+    const channel = supabase
+      .channel("notification-badge")
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "notifications",
+        filter: `user_id=eq.${userId}`,
+      }, () => {
+        setLocalUnread((prev) => prev + 1)
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [userId])
 
   return (
     <nav
@@ -94,7 +122,7 @@ export function BottomNav({
               ) : (
                 item.icon
               )}
-              {item.href === "/notifications" && unreadCount > 0 && (
+              {item.href === "/notifications" && localUnread > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
               )}
             </span>

@@ -38,7 +38,7 @@ export default async function MainLayout({
           {children}
         </div>
       </main>
-      <BottomNav unreadCount={unreadCount} avatarUrl={avatarUrl} fullName={fullName} />
+      <BottomNav unreadCount={unreadCount} avatarUrl={avatarUrl} fullName={fullName} userId={user?.id} />
     </div>
   )
 }
