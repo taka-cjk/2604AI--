@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ sent: 0 })
   }
 
-  const notifs = (rawNotifs ?? []) as NotifRow[]
+  const notifs = (rawNotifs ?? []) as unknown as NotifRow[]
 
   // コメント・メンション通知の投稿プレビューを取得
   const postIds = [...new Set(
