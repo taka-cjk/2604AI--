@@ -130,6 +130,19 @@ export function CreateEventForm({ userId, onAdd }: Props) {
       )
     }
 
+    const { data: allProfiles } = await supabase.from("profiles").select("id")
+    const targets = (allProfiles ?? []).filter((p) => p.id !== userId)
+    if (targets.length > 0) {
+      await supabase.from("notifications").insert(
+        targets.map((p) => ({
+          user_id: p.id,
+          actor_id: userId,
+          type: "event_new" as const,
+          entity_id: event.id,
+        }))
+      )
+    }
+
     const { data: organizer } = await supabase
       .from("profiles")
       .select("*")

@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/Avatar"
 type Props = {
   notifications: NotificationWithActor[]
   userId: string
+  eventTitles?: Record<string, string>
 }
 
 function formatDate(iso: string): string {
@@ -34,6 +35,7 @@ function getNotificationText(n: NotificationWithActor): string {
     case "mention": return `${name} mentioned you`
     case "message": return `New message from ${name}`
     case "thread_reply": return `${name} replied to a thread you're in`
+    case "event_new": return `${name} added a new event`
   }
 }
 
@@ -46,6 +48,7 @@ const GROUP_CONFIG: Record<NotificationType, { label: string; iconBg: string; ic
   mention: { label: "Mention", iconBg: "bg-sky-50", iconColor: "text-sky-500" },
   message: { label: "Message", iconBg: "bg-violet-50", iconColor: "text-violet-500" },
   thread_reply: { label: "Thread reply", iconBg: "bg-emerald-50", iconColor: "text-emerald-500" },
+  event_new: { label: "New Event", iconBg: "bg-green-50", iconColor: "text-green-500" },
 }
 
 function TypeIcon({ type, className }: { type: NotificationType; className?: string }) {
@@ -67,6 +70,11 @@ function TypeIcon({ type, className }: { type: NotificationType; className?: str
   if (type === "event_join") return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+    </svg>
+  )
+  if (type === "event_new") return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
     </svg>
   )
   return (
@@ -106,7 +114,7 @@ function FollowBackButton({ actorId, userId }: { actorId: string; userId: string
   )
 }
 
-export function NotificationList({ notifications, userId }: Props) {
+export function NotificationList({ notifications, userId, eventTitles = {} }: Props) {
   const supabase = createClient()
   const router = useRouter()
   const [items, setItems] = useState(notifications)
@@ -205,10 +213,10 @@ export function NotificationList({ notifications, userId }: Props) {
             {groupItems.map((n) => (
               <div
                 key={n.id}
-                onClick={() => n.actor_id && router.push(`/profile/${n.actor_id}`)}
+                onClick={() => n.type !== "event_new" && n.actor_id && router.push(`/profile/${n.actor_id}`)}
                 className={`flex items-center gap-3 px-4 py-3 border-t border-slate-100 first:border-t-0 ${
                   !n.read ? "bg-blue-50/30" : ""
-                } ${n.actor_id ? "cursor-pointer hover:bg-slate-50 transition-colors" : ""}`}
+                } ${n.type !== "event_new" && n.actor_id ? "cursor-pointer hover:bg-slate-50 transition-colors" : ""}`}
               >
                 {n.actor ? (
                   <Avatar name={n.actor.full_name} avatarUrl={n.actor.avatar_url} size="sm" />
@@ -217,9 +225,28 @@ export function NotificationList({ notifications, userId }: Props) {
                     <TypeIcon type={n.type} className={`h-4 w-4 ${config.iconColor}`} />
                   </div>
                 )}
-                <p className="flex-1 text-sm text-slate-700 min-w-0">{getNotificationText(n)}</p>
-                {/* follow のみフォローバックボタン（クリック伝播を止める）、それ以外は時間 */}
-                {n.type === "follow" && n.actor_id ? (
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-slate-700">{getNotificationText(n)}</p>
+                  {n.type === "event_new" && n.entity_id && eventTitles[n.entity_id] && (
+                    <p className="text-xs text-slate-500 mt-0.5 truncate">"{eventTitles[n.entity_id]}"</p>
+                  )}
+                </div>
+                {n.type === "event_new" ? (
+                  <div className="flex gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => router.push("/feed")}
+                      className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors"
+                    >
+                      Check
+                    </button>
+                    <button
+                      onClick={() => router.push("/feed")}
+                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                      Watch
+                    </button>
+                  </div>
+                ) : n.type === "follow" && n.actor_id ? (
                   <div onClick={(e) => e.stopPropagation()}>
                     <FollowBackButton actorId={n.actor_id} userId={userId} />
                   </div>

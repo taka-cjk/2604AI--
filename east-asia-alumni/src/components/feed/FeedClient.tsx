@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import type { PostWithAuthor, EventWithOrganizer } from "@/types/index"
+import { createClient } from "@/lib/supabase/client"
 import { PostCard } from "./PostCard"
 import { CreatePostForm } from "./CreatePostForm"
 import { EventCard } from "./EventCard"
@@ -20,6 +21,18 @@ export function FeedClient({ initialPosts, initialEvents, userId }: Props) {
   const [tab, setTab] = useState<Tab>("feed")
   const [posts, setPosts] = useState<PostWithAuthor[]>(initialPosts)
   const [events, setEvents] = useState<EventWithOrganizer[]>(initialEvents)
+  const [hasNewEvent, setHasNewEvent] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel("feed-event-badge")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "events" }, () => {
+        setHasNewEvent((prev) => !prev ? true : prev)
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   // Feed タブ: 投稿とイベントを created_at の降順で混在表示
   const mixedFeed = useMemo(() => {
@@ -49,14 +62,21 @@ export function FeedClient({ initialPosts, initialEvents, userId }: Props) {
         {(["feed", "events"] as Tab[]).map((t) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => { setTab(t); if (t === "events") setHasNewEvent(false) }}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               tab === t
                 ? "border-b-2 border-indigo-600 text-indigo-600"
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >
-            {t === "feed" ? "Feed" : "Events"}
+            {t === "feed" ? "Feed" : (
+              <span className="relative">
+                Events
+                {hasNewEvent && (
+                  <span className="absolute -top-1 -right-3 h-2 w-2 rounded-full bg-red-500" />
+                )}
+              </span>
+            )}
           </button>
         ))}
       </div>

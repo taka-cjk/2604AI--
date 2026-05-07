@@ -1,5 +1,5 @@
 export type EventType = 'dinner' | 'study' | 'networking' | 'sports' | 'culture' | 'morning' | 'cafe' | 'lunch' | 'other'
-export type NotificationType = 'follow' | 'like' | 'comment' | 'event_join' | 'event_update' | 'mention' | 'message' | 'thread_reply'
+export type NotificationType = 'follow' | 'like' | 'comment' | 'event_join' | 'event_update' | 'mention' | 'message' | 'thread_reply' | 'event_new'
 
 export type SnsLinks = {
   x?: string

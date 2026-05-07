@@ -29,10 +29,22 @@ export default async function NotificationsPage() {
     actor: n.actor_id ? actorMap[n.actor_id] : undefined,
   }))
 
+  const eventIds = [...new Set(
+    (notificationsRaw ?? [])
+      .filter((n: any) => n.type === "event_new" && n.entity_id)
+      .map((n: any) => n.entity_id as string)
+  )]
+  const eventTitles: Record<string, string> = {}
+  if (eventIds.length > 0) {
+    const { data: events } = await supabase
+      .from("events").select("id, title").in("id", eventIds)
+    for (const e of events ?? []) eventTitles[e.id] = e.title
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold text-slate-900">Notifications</h1>
-      <NotificationList notifications={notifications} userId={user.id} />
+      <NotificationList notifications={notifications} userId={user.id} eventTitles={eventTitles} />
     </div>
   )
 }
