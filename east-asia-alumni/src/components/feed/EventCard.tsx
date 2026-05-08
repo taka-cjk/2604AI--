@@ -11,6 +11,7 @@ type Props = {
   event: EventWithOrganizer
   userId: string
   onUpdate?: (event: EventWithOrganizer) => void
+  onDelete?: (eventId: string) => void
 }
 
 type PriceMode = "free" | "actual" | "amount" | "tbd"
@@ -119,7 +120,7 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-export function EventCard({ event, userId, onUpdate }: Props) {
+export function EventCard({ event, userId, onUpdate, onDelete }: Props) {
   const supabase = createClient()
   const [participating, setParticipating] = useState(event.is_participating ?? false)
   const [count, setCount] = useState(event.participants_count)
@@ -129,6 +130,7 @@ export function EventCard({ event, userId, onUpdate }: Props) {
   const [commentsCount, setCommentsCount] = useState(0)
   const [commentInput, setCommentInput] = useState("")
   const [commentSubmitting, setCommentSubmitting] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const [showEdit, setShowEdit] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -357,9 +359,19 @@ export function EventCard({ event, userId, onUpdate }: Props) {
     }
   }
 
+  async function handleDelete() {
+    if (!window.confirm("Delete this event? This cannot be undone.")) return
+    setDeleteLoading(true)
+    await supabase.from("events").update({ deleted_at: new Date().toISOString() }).eq("id", event.id)
+    onDelete?.(event.id)
+    setDeleteLoading(false)
+  }
+
+  const isDeleted = !!event.deleted_at
   const isFull = event.max_participants !== null && count >= event.max_participants && !participating
   const isOrganizer = userId === event.organizer_id
   const cohostIds = new Set((event.cohosts ?? []).map((c) => c.id))
+  const canDelete = !isDeleted && (isOrganizer || cohostIds.has(userId))
 
   const priceStudents = formatPrice(event.price_students)
   const priceOther = formatPrice(event.price_other)
@@ -542,14 +554,32 @@ export function EventCard({ event, userId, onUpdate }: Props) {
                 <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${EVENT_TYPE_COLOR[event.event_type as EventType]}`}>
                   {EVENT_TYPE_LABEL[event.event_type as EventType]}
                 </span>
+                {isDeleted && (
+                  <span className="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-50 text-red-500">
+                    Deleted
+                  </span>
+                )}
               </div>
-              <h3 className="text-base font-semibold text-slate-900 leading-snug">{event.title}</h3>
+              <h3 className={`text-base font-semibold leading-snug ${isDeleted ? "text-slate-400 line-through" : "text-slate-900"}`}>
+                {event.title}
+              </h3>
             </div>
-            {isOrganizer && (
-              <button onClick={startEdit} className="shrink-0 text-xs text-slate-400 hover:text-indigo-600 transition-colors">
-                Edit
-              </button>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {isOrganizer && !isDeleted && (
+                <button onClick={startEdit} className="text-xs text-slate-400 hover:text-indigo-600 transition-colors">
+                  Edit
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  onClick={handleDelete}
+                  disabled={deleteLoading}
+                  className="text-xs text-red-400 hover:text-red-600 transition-colors disabled:opacity-40"
+                >
+                  {deleteLoading ? "..." : "Delete"}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Details */}
@@ -633,26 +663,28 @@ export function EventCard({ event, userId, onUpdate }: Props) {
                 {commentsCount > 0 && <span className="text-xs">{commentsCount}</span>}
               </button>
 
-              <button
-                onClick={toggleParticipation}
-                disabled={isFull}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                  participating
-                    ? "bg-indigo-50 text-indigo-600 hover:bg-red-50 hover:text-red-600"
-                    : isFull
-                    ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                    : "bg-indigo-600 text-white hover:bg-indigo-700"
-                }`}
-              >
-                {participating ? "Going (Cancel)" : isFull ? "Full" : "Join"}
-              </button>
+              {!isDeleted && (
+                <button
+                  onClick={toggleParticipation}
+                  disabled={isFull}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                    participating
+                      ? "bg-indigo-50 text-indigo-600 hover:bg-red-50 hover:text-red-600"
+                      : isFull
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "bg-indigo-600 text-white hover:bg-indigo-700"
+                  }`}
+                >
+                  {participating ? "Going (Cancel)" : isFull ? "Full" : "Join"}
+                </button>
+              )}
             </div>
           </div>
         </>
       )}
 
       {/* コメントセクション */}
-      {!showEdit && showComments && (
+      {!showEdit && !isDeleted && showComments && (
         <div className="flex flex-col gap-3 pt-1 border-t border-slate-100">
           {comments.length > 0 && (
             <div className="flex flex-col gap-2">

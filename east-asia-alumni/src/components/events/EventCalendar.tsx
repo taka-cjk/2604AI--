@@ -234,10 +234,12 @@ export function EventCalendar({
   events: initialEvents,
   userId,
   onUpdate,
+  onDelete,
 }: {
   events: EventWithOrganizer[]
   userId: string
   onUpdate?: (event: EventWithOrganizer) => void
+  onDelete?: (eventId: string) => void
 }) {
   const today = new Date()
   const [viewMode, setViewMode] = useState<ViewMode>("calendar")
@@ -247,6 +249,7 @@ export function EventCalendar({
   const [selectedLocations, setSelectedLocations] = useState<string[]>([])
   const [selectedCategories, setSelectedCategories] = useState<EventType[]>([])
   const [selectedTimes, setSelectedTimes] = useState<string[]>([])
+  const [showDeleted, setShowDeleted] = useState(false)
   const [events, setEvents] = useState(initialEvents)
 
   function prevMonth() {
@@ -263,12 +266,13 @@ export function EventCalendar({
 
   const filteredEvents = useMemo(() => {
     return events.filter((e) => {
+      if (showDeleted ? !e.deleted_at : e.deleted_at) return false
       if (!matchesLocation(e.location, selectedLocations)) return false
       if (selectedCategories.length > 0 && !selectedCategories.includes(e.event_type as EventType)) return false
       if (selectedTimes.length > 0 && !selectedTimes.includes(getTimeSlot(e.event_date))) return false
       return true
     })
-  }, [events, selectedLocations, selectedCategories, selectedTimes])
+  }, [events, showDeleted, selectedLocations, selectedCategories, selectedTimes])
 
   const eventsByDate = useMemo(() => {
     const map: Record<string, EventWithOrganizer[]> = {}
@@ -293,6 +297,11 @@ export function EventCalendar({
     onUpdate?.(updated)
   }
 
+  function handleLocalDelete(eventId: string) {
+    setEvents((prev) => prev.map((e) => e.id === eventId ? { ...e, deleted_at: new Date().toISOString() } : e))
+    onDelete?.(eventId)
+  }
+
   function handleParticipationChange(eventId: string, participating: boolean, delta: number) {
     setEvents((prev) =>
       prev.map((e) =>
@@ -304,7 +313,7 @@ export function EventCalendar({
   }
 
   const selectedEvents = selectedDate ? (eventsByDate[selectedDate] ?? []) : []
-  const hasActiveFilter = selectedLocations.length > 0 || selectedCategories.length > 0 || selectedTimes.length > 0
+  const hasActiveFilter = selectedLocations.length > 0 || selectedCategories.length > 0 || selectedTimes.length > 0 || showDeleted
 
   // List view: filtered events sorted by event_date
   const sortedFilteredEvents = useMemo(
@@ -334,12 +343,23 @@ export function EventCalendar({
           selected={selectedTimes}
           onChange={setSelectedTimes}
         />
+        <button
+          onClick={() => setShowDeleted((v) => !v)}
+          className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+            showDeleted
+              ? "border-red-300 bg-red-50 text-red-600"
+              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+          }`}
+        >
+          Deleted
+        </button>
         {hasActiveFilter && (
           <button
             onClick={() => {
               setSelectedLocations([])
               setSelectedCategories([])
               setSelectedTimes([])
+              setShowDeleted(false)
             }}
             className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1.5 transition-colors"
           >
@@ -525,6 +545,7 @@ export function EventCalendar({
                 event={event}
                 userId={userId}
                 onUpdate={handleLocalUpdate}
+                onDelete={handleLocalDelete}
               />
             ))
           )}

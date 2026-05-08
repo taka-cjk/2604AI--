@@ -42,7 +42,7 @@ export function FeedClient({ initialPosts, initialEvents, userId }: Props) {
 
     const items: FeedItem[] = [
       ...posts.map((p) => ({ kind: "post" as const, data: p, date: p.created_at })),
-      ...events.map((e) => ({ kind: "event" as const, data: e, date: e.created_at })),
+      ...events.filter((e) => !e.deleted_at).map((e) => ({ kind: "event" as const, data: e, date: e.created_at })),
     ]
     return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }, [posts, events])
@@ -53,6 +53,10 @@ export function FeedClient({ initialPosts, initialEvents, userId }: Props) {
 
   function handleEventUpdate(updated: EventWithOrganizer) {
     setEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
+  }
+
+  function handleEventDelete(eventId: string) {
+    setEvents((prev) => prev.map((e) => e.id === eventId ? { ...e, deleted_at: new Date().toISOString() } : e))
   }
 
   return (
@@ -102,6 +106,7 @@ export function FeedClient({ initialPosts, initialEvents, userId }: Props) {
                   event={item.data}
                   userId={userId}
                   onUpdate={handleEventUpdate}
+                  onDelete={handleEventDelete}
                 />
               )
             )
@@ -117,6 +122,7 @@ export function FeedClient({ initialPosts, initialEvents, userId }: Props) {
             events={events}
             userId={userId}
             onUpdate={handleEventUpdate}
+            onDelete={handleEventDelete}
           />
         </div>
       )}

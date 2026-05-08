@@ -83,6 +83,7 @@ export interface Event {
   price_students: string | null
   price_other: string | null
   registration_link: string | null
+  deleted_at: string | null
   created_at: string
   updated_at: string
 }
@@ -256,6 +257,7 @@ export type Database = {
           location?: string | null
           event_date?: string
           max_participants?: number | null
+          deleted_at?: string | null
         }
         Relationships: []
       }
