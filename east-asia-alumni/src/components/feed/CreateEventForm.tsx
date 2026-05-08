@@ -156,6 +156,7 @@ export function CreateEventForm({ userId, onAdd }: Props) {
         price_students: event.price_students ?? null,
         price_other: event.price_other ?? null,
         registration_link: event.registration_link ?? null,
+        deleted_at: null,
         organizer,
         cohosts,
         participants_count: 0,
