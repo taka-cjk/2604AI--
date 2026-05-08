@@ -173,6 +173,7 @@ export type Database = {
       events: {
         Row: {
           created_at: string
+          deleted_at: string | null
           description: string | null
           event_date: string
           event_type: string
@@ -188,6 +189,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           event_date: string
           event_type: string
@@ -203,6 +205,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           event_date?: string
           event_type?: string

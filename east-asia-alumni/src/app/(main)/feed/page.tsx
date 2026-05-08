@@ -71,7 +71,7 @@ export default async function FeedPage() {
     price_students: e.price_students ?? null,
     price_other: e.price_other ?? null,
     registration_link: e.registration_link ?? null,
-    deleted_at: (e as any).deleted_at ?? null,
+    deleted_at: e.deleted_at ?? null,
     created_at: e.created_at,
     updated_at: e.updated_at,
     organizer: e.organizer as Profile,
