@@ -27,6 +27,7 @@ export interface Profile {
   area: string[] | null
   wants: string[] | null
   member_number?: number | null
+  show_on_map: boolean | null
   created_at: string
   updated_at: string
 }

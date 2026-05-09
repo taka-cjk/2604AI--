@@ -428,6 +428,7 @@ export type Database = {
           tags: string[] | null
           updated_at: string
           username: string
+          show_on_map: boolean | null
           wants: string[] | null
           work_location: string | null
         }
@@ -440,6 +441,7 @@ export type Database = {
           full_name: string
           home_country?: string | null
           id: string
+          show_on_map?: boolean | null
           sns_links?: Record<string, string> | null
           tags?: string[] | null
           updated_at?: string
@@ -456,6 +458,7 @@ export type Database = {
           full_name?: string
           home_country?: string | null
           id?: string
+          show_on_map?: boolean | null
           sns_links?: Record<string, string> | null
           tags?: string[] | null
           updated_at?: string

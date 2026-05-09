@@ -60,6 +60,7 @@ export default function ProfileEditPage() {
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
   const [profileSaved, setProfileSaved] = useState(false)
+  const [showOnMap, setShowOnMap] = useState(true)
 
   // ── Study abroad ─────────────────────────────────────────
   const [histories, setHistories] = useState<StudyAbroadHistory[]>([])
@@ -98,6 +99,7 @@ export default function ProfileEditPage() {
       setSelectedWants(p.wants ?? [])
       setAvatarUrl(p.avatar_url)
       setUsername(p.username ?? "")
+      setShowOnMap(p.show_on_map ?? true)
 
       const [{ data: h }, { data: w }] = await Promise.all([
         supabase.from("study_abroad_histories").select("*").eq("profile_id", user.id).order("start_date", { ascending: false }),
@@ -162,6 +164,7 @@ export default function ProfileEditPage() {
       sns_links: snsLinks,
       area: selectedAreas,
       wants: selectedWants,
+      show_on_map: showOnMap,
     }).eq("id", profile.id)
     if (error) { setProfileError(error.message) } else { setProfileSaved(true) }
     setProfileLoading(false)
@@ -508,6 +511,17 @@ export default function ProfileEditPage() {
               ))}
             </div>
           </div>
+
+          {/* Map visibility */}
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showOnMap}
+              onChange={(e) => setShowOnMap(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+            />
+            <span className="text-sm text-slate-700">Show my usual area on the Discover map</span>
+          </label>
 
           {profileError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{profileError}</p>}
           {profileSaved && <p className="text-sm text-green-600 bg-green-50 rounded-lg px-3 py-2">Saved!</p>}

@@ -10,7 +10,7 @@ export default async function DiscoverPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  const [{ data: profilesRaw }, { data: followsRaw }] = await Promise.all([
+  const [{ data: profilesRaw }, { data: followsRaw }, { data: myProfile }] = await Promise.all([
     supabase
       .from("profiles")
       .select("*")
@@ -20,6 +20,11 @@ export default async function DiscoverPage() {
       .from("follows")
       .select("following_id")
       .eq("follower_id", user.id),
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single(),
   ])
 
   const followingIds = new Set((followsRaw ?? []).map((f) => f.following_id))
@@ -29,5 +34,5 @@ export default async function DiscoverPage() {
     is_following: followingIds.has(p.id),
   }))
 
-  return <DiscoverClient profiles={profiles} userId={user.id} />
+  return <DiscoverClient profiles={profiles} userId={user.id} initialShowOnMap={myProfile?.show_on_map ?? true} currentProfile={myProfile as Profile | null} />
 }

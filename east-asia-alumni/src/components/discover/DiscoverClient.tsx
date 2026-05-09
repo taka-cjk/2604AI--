@@ -3,8 +3,10 @@
 import { useState, useMemo } from "react"
 import dynamic from "next/dynamic"
 import type { ProfileWithFollow } from "@/app/(main)/discover/page"
+import type { Profile } from "@/types/index"
 import { UserCard } from "./UserCard"
 import { WANTS_OPTIONS } from "@/data/wants"
+import { createClient } from "@/lib/supabase/client"
 
 const AlumniMap = dynamic(() => import("./AlumniMap"), {
   ssr: false,
@@ -18,15 +20,25 @@ const AlumniMap = dynamic(() => import("./AlumniMap"), {
 type Props = {
   profiles: ProfileWithFollow[]
   userId: string
+  initialShowOnMap: boolean
+  currentProfile: Profile | null
 }
 
 type Tab = "list" | "map"
 
-export function DiscoverClient({ profiles, userId }: Props) {
+export function DiscoverClient({ profiles, userId, initialShowOnMap, currentProfile }: Props) {
+  const supabase = createClient()
   const [tab, setTab] = useState<Tab>("list")
   const [query, setQuery] = useState("")
   const [countryFilter, setCountryFilter] = useState("")
   const [wantsFilter, setWantsFilter] = useState("")
+  const [showOnMap, setShowOnMap] = useState(initialShowOnMap)
+
+  async function handleToggleMap() {
+    const next = !showOnMap
+    setShowOnMap(next)
+    await supabase.from("profiles").update({ show_on_map: next }).eq("id", userId)
+  }
 
   const countries = useMemo(() => {
     const set = new Set<string>()
@@ -49,6 +61,19 @@ export function DiscoverClient({ profiles, userId }: Props) {
       <div>
         <h1 className="text-xl font-semibold text-slate-900 mb-1">Discover People</h1>
         <p className="text-sm text-slate-500">Connect with East Asian alumni</p>
+        <div className="flex items-center justify-between mt-1.5">
+          <span className="text-xs text-slate-400">Show my usual area on the map</span>
+          <button
+            onClick={handleToggleMap}
+            className={`text-xs px-2.5 py-0.5 rounded-full border transition-colors ${
+              showOnMap
+                ? "bg-indigo-50 border-indigo-300 text-indigo-600"
+                : "border-slate-200 text-slate-400"
+            }`}
+          >
+            {showOnMap ? "Visible" : "Hidden"}
+          </button>
+        </div>
       </div>
 
       {/* タブ */}
@@ -118,7 +143,13 @@ export function DiscoverClient({ profiles, userId }: Props) {
       )}
 
       {tab === "map" && (
-        <AlumniMap profiles={profiles} />
+        <AlumniMap
+          profiles={[
+            ...profiles.filter(p => p.show_on_map),
+            ...(showOnMap && currentProfile ? [currentProfile] : []),
+          ]}
+          centerProfile={currentProfile}
+        />
       )}
     </div>
   )
