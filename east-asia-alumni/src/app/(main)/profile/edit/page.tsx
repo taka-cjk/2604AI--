@@ -11,7 +11,7 @@ import { Avatar } from "@/components/ui/Avatar"
 import { UniversityCombobox } from "@/components/ui/UniversityCombobox"
 import { CompanyCombobox } from "@/components/ui/CompanyCombobox"
 import { CityCombobox } from "@/components/ui/CityCombobox"
-import { TOKYO_AREAS } from "@/data/areas"
+import { StationCombobox } from "@/components/ui/StationCombobox"
 import { WANTS_OPTIONS } from "@/data/wants"
 
 type HistoryForm = {
@@ -52,7 +52,7 @@ export default function ProfileEditPage() {
   const [avatarUploading, setAvatarUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [snsLinks, setSnsLinks] = useState<SnsLinks>({})
-  const [selectedAreas, setSelectedAreas] = useState<string[]>([])
+  const [selectedStation, setSelectedStation] = useState("")
   const [selectedWants, setSelectedWants] = useState<string[]>([])
   const [username, setUsername] = useState("")
   const [usernameError, setUsernameError] = useState<string | null>(null)
@@ -95,7 +95,7 @@ export default function ProfileEditPage() {
       })
       setTags(p.tags ?? [])
       setSnsLinks(p.sns_links ?? {})
-      setSelectedAreas(p.area ?? [])
+      setSelectedStation(p.area?.[0] ?? "")
       setSelectedWants(p.wants ?? [])
       setAvatarUrl(p.avatar_url)
       setUsername(p.username ?? "")
@@ -162,7 +162,7 @@ export default function ProfileEditPage() {
       work_location: profileForm.work_location || null,
       tags,
       sns_links: snsLinks,
-      area: selectedAreas,
+      area: selectedStation ? [selectedStation] : [],
       wants: selectedWants,
       show_on_map: showOnMap,
     }).eq("id", profile.id)
@@ -453,18 +453,11 @@ export default function ProfileEditPage() {
 
           {/* Area */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Your usual area (Tokyo)</label>
-            <div className="flex flex-wrap gap-2">
-              {TOKYO_AREAS.map((a) => {
-                const checked = selectedAreas.includes(a.name)
-                return (
-                  <label key={a.name} className={`flex items-center gap-1.5 cursor-pointer rounded-full border px-3 py-1 text-xs transition-colors ${checked ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-slate-200 text-slate-600 hover:border-indigo-300"}`}>
-                    <input type="checkbox" className="sr-only" checked={checked} onChange={() => setSelectedAreas((prev) => checked ? prev.filter((x) => x !== a.name) : [...prev, a.name])} />
-                    {a.label}
-                  </label>
-                )
-              })}
-            </div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Your usual area (station in Tokyo)
+            </label>
+            <p className="text-xs text-slate-400 mb-2">*Shown on Discover &gt; Map</p>
+            <StationCombobox value={selectedStation} onChange={setSelectedStation} />
           </div>
 
           {/* Wants */}

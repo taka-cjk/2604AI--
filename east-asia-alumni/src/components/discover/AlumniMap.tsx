@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css"
 import type { Profile } from "@/types/index"
 import { CITY_MAP } from "@/data/cities"
 import { AREA_MAP } from "@/data/areas"
+import { STATION_MAP } from "@/data/stations"
 
 type Props = {
   profiles: Profile[]
@@ -18,7 +19,8 @@ const ZOOM_THRESHOLD = 8
 function resolveLatLng(p: Profile): { lat: number; lng: number } | null {
   const areas = p.area?.filter(Boolean) ?? []
   if (areas.length > 0) {
-    const entry = AREA_MAP[areas[0]]
+    const name = areas[0]
+    const entry = STATION_MAP[name] ?? AREA_MAP[name]
     if (entry) return { lat: entry.lat, lng: entry.lng }
   }
   if (p.current_location) {
@@ -34,7 +36,7 @@ function resolvePoints(profiles: Profile[]): HeatPoint[] {
     const areas = p.area?.filter(Boolean) ?? []
     if (areas.length > 0) {
       for (const areaName of areas) {
-        const entry = AREA_MAP[areaName]
+        const entry = STATION_MAP[areaName] ?? AREA_MAP[areaName]
         if (entry) points.push([entry.lat, entry.lng, 1])
       }
     } else if (p.current_location) {
