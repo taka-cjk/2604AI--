@@ -100,6 +100,18 @@ export interface EventCohost {
   created_at: string
 }
 
+export interface WorkHistory {
+  id: string
+  profile_id: string
+  company_name: string
+  company_name_local: string | null
+  role: string | null
+  location: string | null
+  start_date: string | null
+  end_date: string | null
+  created_at: string
+}
+
 export interface Conversation {
   id: string
   created_at: string

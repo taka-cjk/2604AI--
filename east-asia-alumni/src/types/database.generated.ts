@@ -506,6 +506,50 @@ export type Database = {
           },
         ]
       }
+      work_histories: {
+        Row: {
+          company_name: string
+          company_name_local: string | null
+          created_at: string
+          end_date: string | null
+          id: string
+          location: string | null
+          profile_id: string
+          role: string | null
+          start_date: string | null
+        }
+        Insert: {
+          company_name: string
+          company_name_local?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          location?: string | null
+          profile_id: string
+          role?: string | null
+          start_date?: string | null
+        }
+        Update: {
+          company_name?: string
+          company_name_local?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          location?: string | null
+          profile_id?: string
+          role?: string | null
+          start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_histories_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
