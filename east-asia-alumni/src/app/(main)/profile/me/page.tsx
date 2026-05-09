@@ -50,11 +50,25 @@ export default async function MyProfilePage() {
 
   if (!profile) redirect("/auth/onboarding")
 
-  const { data: histories } = await supabase
-    .from("study_abroad_histories")
-    .select("*")
-    .eq("profile_id", user.id)
-    .order("start_date", { ascending: true })
+  const [
+    { data: histories },
+    { count: followingCount },
+    { count: followersCount },
+  ] = await Promise.all([
+    supabase
+      .from("study_abroad_histories")
+      .select("*")
+      .eq("profile_id", user.id)
+      .order("start_date", { ascending: true }),
+    supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("follower_id", user.id),
+    supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", user.id),
+  ])
 
   const typedHistories = (histories ?? []) as StudyAbroadHistory[]
 
@@ -131,6 +145,18 @@ export default async function MyProfilePage() {
           Member #{profile.member_number} · Joined {formatJoinDate(profile.created_at)} · {formatTenure(profile.created_at)}
         </p>
       )}
+
+      {/* Follow counts */}
+      <div className="flex gap-4 text-sm">
+        <Link href="/profile/me/following" className="hover:underline">
+          <span className="font-semibold text-slate-900">{followingCount ?? 0}</span>
+          <span className="text-slate-500 ml-1">Following</span>
+        </Link>
+        <Link href="/profile/me/followers" className="hover:underline">
+          <span className="font-semibold text-slate-900">{followersCount ?? 0}</span>
+          <span className="text-slate-500 ml-1">Followers</span>
+        </Link>
+      </div>
 
       {/* Wants */}
       {profile.wants && profile.wants.length > 0 && (

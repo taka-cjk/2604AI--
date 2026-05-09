@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import type { Profile, StudyAbroadHistory } from "@/types/index"
 import { WANTS_MAP } from "@/data/wants"
@@ -51,12 +52,26 @@ export default async function UserProfilePage({ params }: Props) {
 
   const typedHistories = (histories ?? []) as StudyAbroadHistory[]
 
-  const { data: followRow } = await supabase
-    .from("follows")
-    .select("follower_id")
-    .eq("follower_id", user.id)
-    .eq("following_id", id)
-    .maybeSingle()
+  const [
+    { data: followRow },
+    { count: followingCount },
+    { count: followersCount },
+  ] = await Promise.all([
+    supabase
+      .from("follows")
+      .select("follower_id")
+      .eq("follower_id", user.id)
+      .eq("following_id", id)
+      .maybeSingle(),
+    supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("follower_id", id),
+    supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", id),
+  ])
 
   const isFollowing = !!followRow
 
@@ -112,6 +127,18 @@ export default async function UserProfilePage({ params }: Props) {
           Member #{profile.member_number} · Joined {formatJoinDate(profile.created_at)} · {formatTenure(profile.created_at)}
         </p>
       )}
+
+      {/* Follow counts */}
+      <div className="flex gap-4 text-sm">
+        <Link href={`/profile/${id}/following`} className="hover:underline">
+          <span className="font-semibold text-slate-900">{followingCount ?? 0}</span>
+          <span className="text-slate-500 ml-1">Following</span>
+        </Link>
+        <Link href={`/profile/${id}/followers`} className="hover:underline">
+          <span className="font-semibold text-slate-900">{followersCount ?? 0}</span>
+          <span className="text-slate-500 ml-1">Followers</span>
+        </Link>
+      </div>
 
       {/* Wants */}
       {profile.wants && profile.wants.length > 0 && (
