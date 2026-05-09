@@ -159,6 +159,7 @@ export interface EventWithOrganizer extends Event {
   participants_count: number
   is_participating?: boolean
   cohosts: Profile[]
+  participants: Profile[]
 }
 
 export interface ProfileWithStats extends Profile {

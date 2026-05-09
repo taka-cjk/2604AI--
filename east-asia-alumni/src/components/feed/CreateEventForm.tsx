@@ -161,6 +161,7 @@ export function CreateEventForm({ userId, onAdd }: Props) {
         cohosts,
         participants_count: 0,
         is_participating: false,
+        participants: [],
       })
     }
 

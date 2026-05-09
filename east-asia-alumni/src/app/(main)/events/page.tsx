@@ -22,7 +22,7 @@ export default async function EventsPage() {
 
   const [{ data: participantsData }, { data: cohostsData }] = await Promise.all([
     eventIds.length
-      ? supabase.from("event_participants").select("event_id, user_id").in("event_id", eventIds)
+      ? supabase.from("event_participants").select("event_id, user_id, profile:profiles!event_participants_user_id_fkey(id, username, full_name, avatar_url)").in("event_id", eventIds)
       : Promise.resolve({ data: [] }),
     eventIds.length
       ? supabase.from("event_cohosts").select("event_id, profile:profiles!event_cohosts_user_id_fkey(*)").in("event_id", eventIds)
@@ -51,6 +51,9 @@ export default async function EventsPage() {
     cohosts: (cohostsData ?? [])
       .filter((c) => c.event_id === e.id)
       .map((c) => c.profile as Profile),
+    participants: (participantsData ?? [])
+      .filter((p) => p.event_id === e.id)
+      .map((p) => (p as { event_id: string; user_id: string; profile: Profile }).profile),
   }))) as EventWithOrganizer[]
 
   return (

@@ -650,6 +650,11 @@ export function EventCard({ event, userId, onUpdate, onDelete }: Props) {
                   Co-hosts: {event.cohosts.map((c) => `@${c.username}`).join(", ")}
                 </p>
               )}
+              {(event.participants ?? []).length > 0 && (
+                <p className="text-xs text-slate-400 pl-5">
+                  Attendees: {event.participants.map((p) => `@${p.username}`).join(", ")}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
