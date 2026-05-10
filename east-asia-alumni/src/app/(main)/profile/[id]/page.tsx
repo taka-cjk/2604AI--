@@ -98,7 +98,15 @@ export default async function UserProfilePage({ params }: Props) {
             {profile.bio && <p className="mt-2 text-sm text-slate-700">{profile.bio}</p>}
           </div>
         </div>
-        <FollowButton targetId={id} currentUserId={user.id} initialFollowing={isFollowing} />
+        <div className="flex gap-2">
+          <Link
+            href={`/messages/${id}`}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            Message
+          </Link>
+          <FollowButton targetId={id} currentUserId={user.id} initialFollowing={isFollowing} />
+        </div>
       </div>
 
       {/* Tags */}

@@ -50,7 +50,7 @@ const navItems = [
   },
 ]
 
-export function Sidebar({ unreadCount = 0 }: { unreadCount?: number }) {
+export function Sidebar({ unreadCount = 0, unreadMessageCount = 0 }: { unreadCount?: number; unreadMessageCount?: number }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -87,6 +87,9 @@ export function Sidebar({ unreadCount = 0 }: { unreadCount?: number }) {
               <span className="relative">
                 {item.icon}
                 {item.href === "/notifications" && unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
+                )}
+                {item.href === "/messages" && unreadMessageCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
                 )}
               </span>

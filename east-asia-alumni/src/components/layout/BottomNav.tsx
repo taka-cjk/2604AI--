@@ -58,24 +58,25 @@ const navItems = [
 
 export function BottomNav({
   unreadCount = 0,
+  unreadMessageCount = 0,
   avatarUrl,
   fullName,
   userId,
 }: {
   unreadCount?: number
+  unreadMessageCount?: number
   avatarUrl?: string | null
   fullName?: string
   userId?: string
 }) {
   const pathname = usePathname()
   const [localUnread, setLocalUnread] = useState(unreadCount)
+  const [localUnreadMsg, setLocalUnreadMsg] = useState(unreadMessageCount)
 
-  // レイアウト再描画（ページ遷移）時にサーバー値と同期
-  useEffect(() => {
-    setLocalUnread(unreadCount)
-  }, [unreadCount])
+  useEffect(() => { setLocalUnread(unreadCount) }, [unreadCount])
+  useEffect(() => { setLocalUnreadMsg(unreadMessageCount) }, [unreadMessageCount])
 
-  // Realtime: 自分宛ての通知が届いたら即座にバッジを更新
+  // Realtime: 通知バッジ + メッセージバッジ（notifications経由で一本化）
   useEffect(() => {
     if (!userId) return
     const supabase = createClient()
@@ -86,8 +87,10 @@ export function BottomNav({
         schema: "public",
         table: "notifications",
         filter: `user_id=eq.${userId}`,
-      }, () => {
+      }, (payload) => {
+        const notif = payload.new as { type?: string }
         setLocalUnread((prev) => prev + 1)
+        if (notif.type === "message") setLocalUnreadMsg((prev) => prev + 1)
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
@@ -123,6 +126,9 @@ export function BottomNav({
                 item.icon
               )}
               {item.href === "/notifications" && localUnread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
+              )}
+              {item.href === "/messages" && localUnreadMsg > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
               )}
             </span>

@@ -146,9 +146,11 @@ function buildEmail(
     sections += section("💬", `Comments (${groups.comment.length})`, `<ul style="margin:6px 0;padding:0;list-style:none">${items}</ul>`)
   }
 
-  const msgCount = groups.message?.length ?? 0
-  if (msgCount > 0) {
-    sections += section("📩", `Messages (${msgCount})`, `<p style="margin:6px 0;color:#475569">You have ${msgCount} unread message${msgCount !== 1 ? "s" : ""}</p>`)
+  if (groups.message?.length) {
+    const items = groups.message
+      .map((n) => `<li style="margin:4px 0;color:#334155">· ${n.actor?.full_name ?? "Someone"} sent you a message</li>`)
+      .join("")
+    sections += section("📩", `Messages (${groups.message.length})`, `<ul style="margin:6px 0;padding:0;list-style:none">${items}</ul>`)
   }
 
   if (newEvents.length > 0) {
