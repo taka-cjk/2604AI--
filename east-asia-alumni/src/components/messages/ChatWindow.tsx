@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { Message, Profile } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
+import { LocalTime } from "@/components/ui/LocalTime"
 import Link from "next/link"
 
 type Props = {
@@ -16,6 +18,7 @@ type Props = {
 
 export function ChatWindow({ initialMessages, conversationId: initConvId, currentUserId, targetUserId, targetProfile }: Props) {
   const supabase = createClient()
+  const router = useRouter()
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [conversationId, setConversationId] = useState<string | null>(initConvId)
   const [input, setInput] = useState("")
@@ -25,6 +28,12 @@ export function ChatWindow({ initialMessages, conversationId: initConvId, curren
   useEffect(() => {
     bottomRef.current?.scrollIntoView()
   }, [messages])
+
+  // 離脱時にレイアウトを再フェッチ → 未読バッジを更新
+  useEffect(() => {
+    return () => { router.refresh() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (!conversationId) return
@@ -151,7 +160,7 @@ export function ChatWindow({ initialMessages, conversationId: initConvId, curren
               }`}>
                 <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                 <p className={`text-[10px] mt-0.5 ${isMine ? "text-indigo-200" : "text-slate-400"}`}>
-                  {new Date(msg.created_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
+                  <LocalTime iso={msg.created_at} />
                 </p>
               </div>
             </div>

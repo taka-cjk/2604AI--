@@ -5,6 +5,7 @@ import type { Profile, Message } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
 import { MessagesListRefresh } from "@/components/messages/MessagesListRefresh"
 import { MarkAsUnreadButton } from "@/components/messages/MarkAsUnreadButton"
+import { LocalTime } from "@/components/ui/LocalTime"
 
 export default async function MessagesPage() {
   const supabase = await createClient()
@@ -64,15 +65,6 @@ export default async function MessagesPage() {
       return tb.localeCompare(ta)
     })
 
-  function formatTime(iso: string) {
-    const d = new Date(iso)
-    const now = new Date()
-    const isToday = d.toDateString() === now.toDateString()
-    return isToday
-      ? d.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })
-      : d.toLocaleDateString("ja-JP", { month: "short", day: "numeric" })
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <MessagesListRefresh userId={user.id} />
@@ -100,12 +92,15 @@ export default async function MessagesPage() {
                       {otherProfile!.full_name}
                     </p>
                     {lastMsg && (
-                      <p className="text-xs text-slate-400 shrink-0">{formatTime(lastMsg.created_at)}</p>
+                      <p className="text-xs text-slate-400 shrink-0"><LocalTime iso={lastMsg.created_at} /></p>
                     )}
                   </div>
                   {lastMsg && (
                     <p className={`text-xs truncate mt-0.5 ${unread > 0 ? "text-slate-800 font-medium" : "text-slate-400"}`}>
-                      {lastMsg.sender_id === user.id ? "You: " : ""}{lastMsg.content}
+                      {lastMsg.sender_id === user.id
+                        ? "You: "
+                        : `${otherProfile!.full_name.split(" ")[0]}: `
+                      }{lastMsg.content}
                     </p>
                   )}
                 </div>
@@ -115,9 +110,12 @@ export default async function MessagesPage() {
                   </span>
                 )}
               </Link>
-              {unread === 0 && lastReceivedMsg && (
+              {(unread > 0 || lastReceivedMsg) && (
                 <MarkAsUnreadButton
-                  msgId={lastReceivedMsg.id}
+                  conversationId={convId}
+                  lastReceivedMsgId={lastReceivedMsg?.id ?? null}
+                  isUnread={unread > 0}
+                  currentUserId={user.id}
                   className="absolute right-0 top-1/2 -translate-y-1/2"
                 />
               )}
