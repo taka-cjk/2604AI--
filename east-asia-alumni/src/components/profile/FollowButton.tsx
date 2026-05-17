@@ -23,11 +23,6 @@ export function FollowButton({ targetId, currentUserId, initialFollowing }: Prop
     setFollowing(next)
     if (next) {
       await supabase.from("follows").insert({ follower_id: currentUserId, following_id: targetId })
-      await supabase.from("notifications").insert({
-        user_id: targetId,
-        actor_id: currentUserId,
-        type: "follow" as const,
-      })
     } else {
       await supabase.from("follows").delete()
         .eq("follower_id", currentUserId)

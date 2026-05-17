@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { NotificationWithActor, NotificationType } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
+import { LocalTime } from "@/components/ui/LocalTime"
 
 type Props = {
   notifications: NotificationWithActor[]
@@ -12,16 +13,19 @@ type Props = {
   eventTitles?: Record<string, string>
 }
 
-function formatDate(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "just now"
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+function getRoute(n: NotificationWithActor): string | null {
+  switch (n.type) {
+    case "message":      return n.actor_id ? `/messages/${n.actor_id}` : null
+    case "comment":
+    case "mention":
+    case "thread_reply": return "/feed"
+    case "event_join":
+    case "event_update":
+    case "event_new":    return "/events"
+    case "follow":       return n.actor_id ? `/profile/${n.actor_id}` : null
+    case "like":
+    default:             return null
+  }
 }
 
 function getNotificationText(n: NotificationWithActor): string {
@@ -39,16 +43,16 @@ function getNotificationText(n: NotificationWithActor): string {
   }
 }
 
-const GROUP_CONFIG: Record<NotificationType, { label: string; iconBg: string; iconColor: string }> = {
-  follow: { label: "New follower", iconBg: "bg-indigo-50", iconColor: "text-indigo-500" },
-  like: { label: "Like", iconBg: "bg-red-50", iconColor: "text-red-500" },
-  comment: { label: "Comment", iconBg: "bg-blue-50", iconColor: "text-blue-500" },
-  event_join: { label: "Event join", iconBg: "bg-teal-50", iconColor: "text-teal-500" },
-  event_update: { label: "Event update", iconBg: "bg-amber-50", iconColor: "text-amber-500" },
-  mention: { label: "Mention", iconBg: "bg-sky-50", iconColor: "text-sky-500" },
-  message: { label: "Message", iconBg: "bg-violet-50", iconColor: "text-violet-500" },
-  thread_reply: { label: "Thread reply", iconBg: "bg-emerald-50", iconColor: "text-emerald-500" },
-  event_new: { label: "New Event", iconBg: "bg-green-50", iconColor: "text-green-500" },
+const TYPE_CONFIG: Record<NotificationType, { iconBg: string; iconColor: string; borderColor: string }> = {
+  follow:       { iconBg: "bg-indigo-50",  iconColor: "text-indigo-500",  borderColor: "border-l-indigo-400" },
+  like:         { iconBg: "bg-red-50",     iconColor: "text-red-500",     borderColor: "border-l-red-400" },
+  comment:      { iconBg: "bg-blue-50",    iconColor: "text-blue-500",    borderColor: "border-l-blue-400" },
+  event_join:   { iconBg: "bg-teal-50",    iconColor: "text-teal-500",    borderColor: "border-l-teal-400" },
+  event_update: { iconBg: "bg-amber-50",   iconColor: "text-amber-500",   borderColor: "border-l-amber-400" },
+  mention:      { iconBg: "bg-sky-50",     iconColor: "text-sky-500",     borderColor: "border-l-sky-400" },
+  message:      { iconBg: "bg-violet-50",  iconColor: "text-violet-500",  borderColor: "border-l-violet-400" },
+  thread_reply: { iconBg: "bg-emerald-50", iconColor: "text-emerald-500", borderColor: "border-l-emerald-400" },
+  event_new:    { iconBg: "bg-green-50",   iconColor: "text-green-500",   borderColor: "border-l-green-400" },
 }
 
 function TypeIcon({ type, className }: { type: NotificationType; className?: string }) {
@@ -67,24 +71,29 @@ function TypeIcon({ type, className }: { type: NotificationType; className?: str
       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.068.157 2.148.279 3.238.364.466.037.893.281 1.153.671L12 21l2.652-3.978c.26-.39.687-.634 1.153-.67 1.09-.086 2.17-.208 3.238-.365 1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
     </svg>
   )
-  if (type === "event_join") return (
+  if (type === "event_join" || type === "event_update" || type === "event_new") return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
     </svg>
   )
-  if (type === "event_new") return (
+  if (type === "mention") return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm0 0c0 1.657 1.007 3 2.25 3S21 13.657 21 12a9 9 0 10-2.636 6.364M16.5 12V8.25" />
+    </svg>
+  )
+  if (type === "message") return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
     </svg>
   )
   return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
     </svg>
   )
 }
 
-function FollowBackButton({ actorId, userId }: { actorId: string; userId: string }) {
+function FollowBackButton({ actorId, userId, onDone }: { actorId: string; userId: string; onDone: () => void }) {
   const supabase = createClient()
   const [followed, setFollowed] = useState(false)
 
@@ -92,11 +101,7 @@ function FollowBackButton({ actorId, userId }: { actorId: string; userId: string
     if (followed) return
     setFollowed(true)
     await supabase.from("follows").insert({ follower_id: userId, following_id: actorId })
-    await supabase.from("notifications").insert({
-      user_id: actorId,
-      actor_id: userId,
-      type: "follow" as const,
-    })
+    onDone()
   }
 
   return (
@@ -114,25 +119,115 @@ function FollowBackButton({ actorId, userId }: { actorId: string; userId: string
   )
 }
 
+function NotifCard({
+  n,
+  eventTitles,
+  userId,
+  onDismiss,
+  onNavigate,
+  muted,
+}: {
+  n: NotificationWithActor
+  eventTitles: Record<string, string>
+  userId: string
+  onDismiss?: (id: string) => void
+  onNavigate?: (n: NotificationWithActor) => void
+  muted?: boolean
+}) {
+  const config = TYPE_CONFIG[n.type]
+  const route = getRoute(n)
+  const clickable = !!route
+
+  return (
+    <li
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-100 border-l-4 ${config.borderColor} ${
+        muted ? "bg-slate-50" : "bg-white bg-indigo-50/20"
+      } ${clickable ? "cursor-pointer hover:bg-slate-100 transition-colors" : ""}`}
+      onClick={() => {
+        if (!clickable || !onNavigate) return
+        if (!muted && onDismiss) onDismiss(n.id)
+        onNavigate(n)
+      }}
+    >
+      {n.actor ? (
+        <div className="relative shrink-0">
+          <Avatar name={n.actor.full_name} avatarUrl={n.actor.avatar_url} size="sm" />
+          <span className={`absolute -bottom-0.5 -right-0.5 rounded-full p-0.5 ${config.iconBg}`}>
+            <TypeIcon type={n.type} className={`h-2.5 w-2.5 ${config.iconColor}`} />
+          </span>
+        </div>
+      ) : (
+        <div className={`shrink-0 rounded-full p-2 ${config.iconBg}`}>
+          <TypeIcon type={n.type} className={`h-4 w-4 ${config.iconColor}`} />
+        </div>
+      )}
+
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm ${!muted ? "font-medium text-slate-900" : "text-slate-500"}`}>
+          {getNotificationText(n)}
+        </p>
+        {n.type === "event_new" && n.entity_id && eventTitles[n.entity_id] && (
+          <p className="text-xs text-slate-400 mt-0.5 truncate">"{eventTitles[n.entity_id]}"</p>
+        )}
+        <p className="text-xs text-slate-400 mt-0.5">
+          <LocalTime iso={n.created_at} />
+        </p>
+      </div>
+
+      {!muted && n.type === "event_new" ? (
+        <div className="flex gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => { onDismiss?.(n.id) }}
+            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors"
+          >
+            Check
+          </button>
+        </div>
+      ) : !muted && n.type === "follow" && n.actor_id ? (
+        <div onClick={(e) => e.stopPropagation()}>
+          <FollowBackButton actorId={n.actor_id} userId={userId} onDone={() => onDismiss?.(n.id)} />
+        </div>
+      ) : !muted ? (
+        <button
+          onClick={(e) => { e.stopPropagation(); onDismiss?.(n.id) }}
+          className="shrink-0 text-slate-300 hover:text-slate-500 transition-colors"
+          title="Dismiss"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      ) : null}
+    </li>
+  )
+}
+
 export function NotificationList({ notifications, userId, eventTitles = {} }: Props) {
   const supabase = createClient()
   const router = useRouter()
   const [items, setItems] = useState(notifications)
 
-  const unreadCount = items.filter((n) => !n.read).length
+  const unread = items.filter((n) => !n.read)
+  const past   = items.filter((n) =>  n.read)
 
   async function markAllRead() {
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })))
     await supabase
       .from("notifications")
       .update({ read: true })
       .eq("user_id", userId)
       .eq("read", false)
+    setItems((prev) => prev.map((n) => ({ ...n, read: true })))
+    router.refresh()
   }
 
-  async function markGroupRead(ids: string[]) {
-    setItems((prev) => prev.map((n) => ids.includes(n.id) ? { ...n, read: true } : n))
-    await supabase.from("notifications").update({ read: true }).in("id", ids)
+  async function dismiss(id: string) {
+    await supabase.from("notifications").update({ read: true }).eq("id", id)
+    setItems((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n))
+  }
+
+  function navigate(n: NotificationWithActor) {
+    const route = getRoute(n)
+    if (route) router.push(route)
   }
 
   if (items.length === 0) {
@@ -146,118 +241,58 @@ export function NotificationList({ notifications, userId, eventTitles = {} }: Pr
     )
   }
 
-  // タイプ別グループ化
-  const groupMap: Partial<Record<NotificationType, NotificationWithActor[]>> = {}
-  for (const item of items) {
-    if (!groupMap[item.type]) groupMap[item.type] = []
-    groupMap[item.type]!.push(item)
-  }
-
-  // 最新通知が含まれるグループを上に
-  const sortedGroups = (Object.entries(groupMap) as [NotificationType, NotificationWithActor[]][])
-    .sort(([, a], [, b]) =>
-      new Date(b[0].created_at).getTime() - new Date(a[0].created_at).getTime()
-    )
-
   return (
     <div className="flex flex-col gap-1">
       {/* ヘッダー */}
       <div className="flex items-center justify-between mb-2">
-        {unreadCount > 0 ? (
+        {unread.length > 0 ? (
           <span className="text-sm text-slate-500">
-            <span className="font-semibold text-indigo-600">{unreadCount}</span> unread
+            <span className="font-semibold text-indigo-600">{unread.length}</span> unread
           </span>
         ) : (
-          <span className="text-sm text-slate-400">All caught up</span>
+          <span className="text-sm text-slate-400">No NEW notifications</span>
         )}
-        {unreadCount > 0 && (
+        {unread.length > 0 && (
           <button onClick={markAllRead} className="text-xs text-indigo-600 hover:underline">
             Mark all as read
           </button>
         )}
       </div>
 
-      {/* グループ一覧 */}
-      {sortedGroups.map(([type, groupItems]) => {
-        const config = GROUP_CONFIG[type]
-        const groupUnread = groupItems.filter((n) => !n.read).length
-        return (
-          <div key={type} className="rounded-xl border border-slate-200 bg-white overflow-hidden mb-3">
-            {/* グループヘッダー */}
-            <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className={`rounded-lg p-1.5 ${config.iconBg}`}>
-                  <TypeIcon type={type} className={`h-4 w-4 ${config.iconColor}`} />
-                </div>
-                <span className="text-sm font-semibold text-slate-800">{config.label}</span>
-                {groupUnread > 0 && (
-                  <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-bold text-white">
-                    {groupUnread}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                {groupUnread > 0 && (
-                  <button
-                    onClick={() => markGroupRead(groupItems.filter((n) => !n.read).map((n) => n.id))}
-                    className="text-xs text-indigo-600 hover:underline"
-                  >
-                    既読にする
-                  </button>
-                )}
-                <span className="text-xs text-slate-400">{formatDate(groupItems[0].created_at)}</span>
-              </div>
-            </div>
+      {/* 未読リスト */}
+      {unread.length > 0 && (
+        <ul className="flex flex-col gap-2 mb-4">
+          {unread.map((n) => (
+            <NotifCard
+              key={n.id}
+              n={n}
+              eventTitles={eventTitles}
+              userId={userId}
+              onDismiss={dismiss}
+              onNavigate={navigate}
+            />
+          ))}
+        </ul>
+      )}
 
-            {/* 通知行 */}
-            {groupItems.map((n) => (
-              <div
+      {/* Past（既読）リスト */}
+      {past.length > 0 && (
+        <>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Past</p>
+          <ul className="flex flex-col gap-2">
+            {past.map((n) => (
+              <NotifCard
                 key={n.id}
-                onClick={() => n.type !== "event_new" && n.actor_id && router.push(`/profile/${n.actor_id}`)}
-                className={`flex items-center gap-3 px-4 py-3 border-t border-slate-100 first:border-t-0 ${
-                  !n.read ? "bg-blue-50/30" : ""
-                } ${n.type !== "event_new" && n.actor_id ? "cursor-pointer hover:bg-slate-50 transition-colors" : ""}`}
-              >
-                {n.actor ? (
-                  <Avatar name={n.actor.full_name} avatarUrl={n.actor.avatar_url} size="sm" />
-                ) : (
-                  <div className="h-9 w-9 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
-                    <TypeIcon type={n.type} className={`h-4 w-4 ${config.iconColor}`} />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-slate-700">{getNotificationText(n)}</p>
-                  {n.type === "event_new" && n.entity_id && eventTitles[n.entity_id] && (
-                    <p className="text-xs text-slate-500 mt-0.5 truncate">"{eventTitles[n.entity_id]}"</p>
-                  )}
-                </div>
-                {n.type === "event_new" ? (
-                  <div className="flex gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => router.push("/feed")}
-                      className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors"
-                    >
-                      Check
-                    </button>
-                    <button
-                      onClick={() => router.push("/feed")}
-                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-                    >
-                      Watch
-                    </button>
-                  </div>
-                ) : n.type === "follow" && n.actor_id ? (
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <FollowBackButton actorId={n.actor_id} userId={userId} />
-                  </div>
-                ) : (
-                  <span className="text-xs text-slate-400 shrink-0">{formatDate(n.created_at)}</span>
-                )}
-              </div>
+                n={n}
+                eventTitles={eventTitles}
+                userId={userId}
+                onNavigate={navigate}
+                muted
+              />
             ))}
-          </div>
-        )
-      })}
+          </ul>
+        </>
+      )}
     </div>
   )
 }
