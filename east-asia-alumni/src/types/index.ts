@@ -179,6 +179,22 @@ export interface NotificationWithActor extends Notification {
   actor?: Profile
 }
 
+export interface Article {
+  id: string
+  author_id: string
+  title: string
+  content: string
+  banner_url: string | null
+  status: "draft" | "published"
+  created_at: string
+  updated_at: string
+}
+
+export interface ArticleWithAuthors extends Article {
+  author: Profile
+  coauthors: Profile[]
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -309,6 +325,29 @@ export type Database = {
           read?: boolean
         }
         Update: { read?: boolean }
+        Relationships: []
+      }
+      articles: {
+        Row: Article
+        Insert: {
+          author_id: string
+          title: string
+          content: string
+          banner_url?: string | null
+          status?: "draft" | "published"
+        }
+        Update: {
+          title?: string
+          content?: string
+          banner_url?: string | null
+          status?: "draft" | "published"
+        }
+        Relationships: []
+      }
+      article_coauthors: {
+        Row: { article_id: string; user_id: string; created_at: string }
+        Insert: { article_id: string; user_id: string }
+        Update: { [_ in never]: never }
         Relationships: []
       }
     }

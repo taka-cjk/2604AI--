@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { FeedClient } from "@/components/feed/FeedClient"
-import type { PostWithAuthor, EventWithOrganizer, Profile } from "@/types/index"
+import type { PostWithAuthor, EventWithOrganizer, ArticleWithAuthors, Profile } from "@/types/index"
 
 export default async function FeedPage() {
   const supabase = await createClient()
@@ -87,5 +87,20 @@ export default async function FeedPage() {
       .map((p) => (p as { event_id: string; user_id: string; profile: Profile }).profile),
   }))) as EventWithOrganizer[]
 
-  return <FeedClient initialPosts={posts} initialEvents={events} userId={user.id} />
+  // ── Articles ───────────────────────────────────────────
+  const { data: articlesRaw } = await supabase
+    .from("articles")
+    .select("*, author:profiles!articles_author_id_fkey(*), coauthors:article_coauthors(user:profiles(*))")
+    .or(`status.eq.published,and(status.eq.draft,author_id.eq.${user.id})`)
+    .order("created_at", { ascending: false })
+    .limit(30)
+
+  const articles: ArticleWithAuthors[] = (articlesRaw ?? []).map((a: any) => ({
+    ...a,
+    status: a.status as "draft" | "published",
+    author: a.author as Profile,
+    coauthors: (a.coauthors ?? []).map((c: any) => c.user as Profile).filter(Boolean),
+  }))
+
+  return <FeedClient initialPosts={posts} initialEvents={events} initialArticles={articles} userId={user.id} />
 }

@@ -378,7 +378,7 @@ export function EventCard({ event, userId, onUpdate, onDelete }: Props) {
   const showPrice = priceStudents || priceOther
 
   return (
-    <article className="rounded-xl border border-slate-200 bg-white px-5 py-4 flex flex-col gap-3">
+    <article className="rounded-xl border border-slate-200 border-l-4 border-l-amber-400 bg-white px-5 py-4 flex flex-col gap-3">
       {showEdit ? (
         <form onSubmit={handleSave} className="flex flex-col gap-3">
           <div className="flex items-center justify-between">

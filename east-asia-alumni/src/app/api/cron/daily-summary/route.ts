@@ -36,7 +36,7 @@ export async function GET(request: Request) {
   const supabase = getSupabaseAdmin()
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-  const [{ data: rawNotifs }, { data: newEvents }] = await Promise.all([
+  const [{ data: rawNotifs }, { data: newEvents }, { data: newArticles }] = await Promise.all([
     supabase
       .from("notifications")
       .select("user_id, actor_id, type, entity_id, actor:profiles!notifications_actor_id_fkey(full_name)")
@@ -46,9 +46,14 @@ export async function GET(request: Request) {
       .from("events")
       .select("id, title")
       .gte("created_at", since),
+    supabase
+      .from("articles")
+      .select("id, title, author:profiles!articles_author_id_fkey(full_name)")
+      .eq("status", "published")
+      .gte("created_at", since),
   ])
 
-  if (!rawNotifs?.length && !newEvents?.length) {
+  if (!rawNotifs?.length && !newEvents?.length && !newArticles?.length) {
     return NextResponse.json({ sent: 0 })
   }
 
@@ -98,13 +103,18 @@ export async function GET(request: Request) {
 
     const firstName = profile?.full_name?.split(" ")[0] ?? "there"
     const events = newEvents ?? []
-    const totalCount = userNotifs.length + events.length
+    const articles = (newArticles ?? []).map((a: any) => ({
+      id: a.id as string,
+      title: a.title as string,
+      author: Array.isArray(a.author) ? (a.author[0] ?? null) : (a.author ?? null),
+    }))
+    const totalCount = userNotifs.length + events.length + articles.length
 
     await getTransporter().sendMail({
       from: `"East Asia Alumni" <${process.env.GMAIL_USER}>`,
       to: email,
       subject: `You have ${totalCount} new update${totalCount !== 1 ? "s" : ""} – East Asia Alumni`,
-      html: buildEmail(firstName, userNotifs, postPreviews, events, appUrl),
+      html: buildEmail(firstName, userNotifs, postPreviews, events, articles, appUrl),
     })
     sent++
   }
@@ -117,6 +127,7 @@ function buildEmail(
   notifs: NotifRow[],
   postPreviews: Record<string, string>,
   newEvents: { id: string; title: string }[],
+  newArticles: { id: string; title: string; author: { full_name: string } | null }[],
   appUrl: string
 ): string {
   const groups: Record<string, NotifRow[]> = {}
@@ -156,6 +167,14 @@ function buildEmail(
   if (newEvents.length > 0) {
     const items = newEvents.map(e => `<li style="margin:4px 0;color:#334155">· "${e.title}" was added</li>`).join("")
     sections += section("🎉", `New Events (${newEvents.length})`, `<ul style="margin:6px 0;padding:0;list-style:none">${items}</ul>`)
+  }
+
+  if (newArticles.length > 0) {
+    const items = newArticles.map(a => {
+      const by = a.author?.full_name ? ` by ${a.author.full_name}` : ""
+      return `<li style="margin:4px 0;color:#334155">· "${a.title}"${by}</li>`
+    }).join("")
+    sections += section("📝", `New Articles (${newArticles.length})`, `<ul style="margin:6px 0;padding:0;list-style:none">${items}</ul>`)
   }
 
   const likeCount = groups.like?.length ?? 0
