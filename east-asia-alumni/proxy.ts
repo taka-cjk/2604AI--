@@ -1,5 +1,19 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getAuthRedirect } from '@/lib/onboarding'
+
+function redirectWithCookies(
+  request: NextRequest,
+  pathname: string,
+  sourceResponse: NextResponse,
+) {
+  const redirectUrl = request.nextUrl.clone()
+  redirectUrl.pathname = pathname
+  redirectUrl.search = ''
+  const response = NextResponse.redirect(redirectUrl)
+  sourceResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie))
+  return response
+}
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -32,8 +46,7 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const isAuthPage = pathname.startsWith('/auth')
-  const isProtectedPage = [
+  const shouldCheckOnboarding = pathname.startsWith('/auth') || [
     '/feed',
     '/discover',
     '/profile',
@@ -42,19 +55,24 @@ export async function proxy(request: NextRequest) {
     '/notifications',
   ].some((p) => pathname.startsWith(p))
 
-  // Redirect unauthenticated users away from protected pages
-  if (!user && isProtectedPage) {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/auth/login'
-    return NextResponse.redirect(redirectUrl)
+  let onboardingCompleted = false
+  if (user && shouldCheckOnboarding) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('onboarding_completed_at')
+      .eq('id', user.id)
+      .maybeSingle()
+    onboardingCompleted = Boolean(profile?.onboarding_completed_at)
   }
 
-  const authExemptPages = ['/auth/onboarding', '/auth/reset-password', '/auth/callback', '/auth/confirm']
-  // Redirect authenticated users away from auth pages (except onboarding/reset-password/callback)
-  if (user && isAuthPage && !authExemptPages.some((p) => pathname.startsWith(p))) {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/feed'
-    return NextResponse.redirect(redirectUrl)
+  const destination = getAuthRedirect({
+    pathname,
+    isAuthenticated: Boolean(user),
+    onboardingCompleted,
+  })
+
+  if (destination) {
+    return redirectWithCookies(request, destination, supabaseResponse)
   }
 
   return supabaseResponse

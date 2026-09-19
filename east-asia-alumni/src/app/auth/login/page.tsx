@@ -33,8 +33,8 @@ export default function LoginPage() {
       return
     }
 
-    // ログイン成功 → フィードページへ移動
-    router.push("/feed")
+    // ログイン成功 → 完了済みならProxyがフィードへ、未完了なら続きへ
+    router.push("/auth/onboarding")
     router.refresh() // サーバー側のセッション情報も更新する
   }
 

@@ -488,8 +488,44 @@ export type Database = {
           },
         ]
       }
+      profile_affiliations: {
+        Row: {
+          affiliation_name: string | null
+          affiliation_type: string
+          created_at: string
+          id: string
+          position: number
+          profile_id: string
+        }
+        Insert: {
+          affiliation_name?: string | null
+          affiliation_type: string
+          created_at?: string
+          id?: string
+          position?: number
+          profile_id: string
+        }
+        Update: {
+          affiliation_name?: string | null
+          affiliation_type?: string
+          created_at?: string
+          id?: string
+          position?: number
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_affiliations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          age_group: string | null
           area: string[] | null
           avatar_url: string | null
           bio: string | null
@@ -498,6 +534,10 @@ export type Database = {
           full_name: string
           home_country: string | null
           id: string
+          onboarding_completed_at: string | null
+          onboarding_current_step: number
+          privacy_policy_accepted_at: string | null
+          privacy_policy_version: string | null
           sns_links: Record<string, string> | null
           tags: string[] | null
           updated_at: string
@@ -507,6 +547,7 @@ export type Database = {
           work_location: string | null
         }
         Insert: {
+          age_group?: string | null
           area?: string[] | null
           avatar_url?: string | null
           bio?: string | null
@@ -515,6 +556,10 @@ export type Database = {
           full_name: string
           home_country?: string | null
           id: string
+          onboarding_completed_at?: string | null
+          onboarding_current_step?: number
+          privacy_policy_accepted_at?: string | null
+          privacy_policy_version?: string | null
           show_on_map?: boolean | null
           sns_links?: Record<string, string> | null
           tags?: string[] | null
@@ -524,6 +569,7 @@ export type Database = {
           work_location?: string | null
         }
         Update: {
+          age_group?: string | null
           area?: string[] | null
           avatar_url?: string | null
           bio?: string | null
@@ -532,6 +578,10 @@ export type Database = {
           full_name?: string
           home_country?: string | null
           id?: string
+          onboarding_completed_at?: string | null
+          onboarding_current_step?: number
+          privacy_policy_accepted_at?: string | null
+          privacy_policy_version?: string | null
           show_on_map?: boolean | null
           sns_links?: Record<string, string> | null
           tags?: string[] | null
@@ -632,7 +682,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      replace_my_onboarding_affiliations: {
+        Args: { p_affiliations: Json }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

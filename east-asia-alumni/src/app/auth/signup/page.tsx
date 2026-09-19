@@ -15,6 +15,7 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState("") // 表示名
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
 
   // フォーム送信時の処理
   async function handleSubmit(e: React.FormEvent) {
@@ -22,16 +23,24 @@ export default function SignupPage() {
     setError(null)
     setLoading(true)
 
+    const cleanName = fullName.trim()
+    if (!cleanName) {
+      setError("Full name is required.")
+      setLoading(false)
+      return
+    }
+
     const supabase = createClient()
 
     // Supabaseに新規ユーザー登録をリクエスト
     // options.data に渡した値はユーザーのメタデータとして保存され、
     // DBトリガーがそれを読み取ってprofilesテーブルにも自動登録する
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: cleanName },
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/auth/onboarding`,
       },
     })
 
@@ -42,9 +51,28 @@ export default function SignupPage() {
       return
     }
 
+    if (!data.session) {
+      setEmailSent(true)
+      setLoading(false)
+      return
+    }
+
     // 登録成功 → プロフィール設定画面へ
     router.push("/auth/onboarding")
     router.refresh()
+  }
+
+  if (emailSent) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <div className="mb-4 text-4xl" aria-hidden="true">📧</div>
+        <h2 className="mb-2 text-xl font-semibold text-slate-900">Check your email</h2>
+        <p className="text-sm text-slate-600">
+          We sent a confirmation link to <span className="font-medium text-slate-900">{email}</span>.
+          Open it to continue onboarding.
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -61,6 +89,7 @@ export default function SignupPage() {
           <input
             type="text"
             required
+            maxLength={100}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
