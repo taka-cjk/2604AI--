@@ -1,34 +1,31 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { UNIVERSITIES, type UniversityEntry } from "@/data/universities"
+import {
+  findUniversityByInput,
+  searchUniversities,
+  type UniversityEntry,
+} from "@/data/universities"
 
 type Props = {
   value: string
   onChange: (name: string, country?: string) => void
   placeholder?: string
   required?: boolean
+  maxLength?: number
 }
 
-const OTHER_OPTION = "__other__"
-
-export function UniversityCombobox({ value, onChange, placeholder = "Peking University", required }: Props) {
+export function UniversityCombobox({
+  value,
+  onChange,
+  placeholder = "Peking University",
+  required,
+  maxLength,
+}: Props) {
   const [query, setQuery] = useState(value)
   const [open, setOpen] = useState(false)
-  const [isOther, setIsOther] = useState(false)
+  const [isOther, setIsOther] = useState(Boolean(value && !findUniversityByInput(value)))
   const containerRef = useRef<HTMLDivElement>(null)
-
-  // sync external value changes
-  useEffect(() => {
-    const found = UNIVERSITIES.find((u) => u.name === value)
-    if (!found && value) {
-      setIsOther(true)
-      setQuery(value)
-    } else {
-      setIsOther(false)
-      setQuery(value)
-    }
-  }, [value])
 
   // close on outside click
   useEffect(() => {
@@ -41,14 +38,7 @@ export function UniversityCombobox({ value, onChange, placeholder = "Peking Univ
     return () => document.removeEventListener("mousedown", handleClick)
   }, [])
 
-  const filtered: UniversityEntry[] = query.trim()
-    ? UNIVERSITIES.filter(
-        (u) =>
-          u.name.toLowerCase().includes(query.toLowerCase()) ||
-          (u.nameJa ?? "").includes(query) ||
-          u.country.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 20)
-    : UNIVERSITIES.slice(0, 20)
+  const filtered: UniversityEntry[] = searchUniversities(query)
 
   // group by country
   const grouped: Record<string, UniversityEntry[]> = {}
@@ -80,6 +70,7 @@ export function UniversityCombobox({ value, onChange, placeholder = "Peking Univ
         <input
           type="text"
           required={required}
+          maxLength={maxLength}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className={inputClass}
@@ -102,6 +93,7 @@ export function UniversityCombobox({ value, onChange, placeholder = "Peking Univ
       <input
         type="text"
         required={required}
+        maxLength={maxLength}
         value={query}
         placeholder={placeholder}
         className={inputClass}
@@ -109,7 +101,7 @@ export function UniversityCombobox({ value, onChange, placeholder = "Peking Univ
         onChange={(e) => {
           setQuery(e.target.value)
           setOpen(true)
-          if (!e.target.value) onChange("")
+          onChange(e.target.value)
         }}
         onKeyDown={(e) => {
           if (e.key === "Escape") setOpen(false)

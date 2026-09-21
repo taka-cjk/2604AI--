@@ -1,4 +1,5 @@
 import { WANTS_OPTIONS } from "../data/wants.ts"
+import { canonicalizeUniversityName } from "../data/universities.ts"
 
 export const ONBOARDING_TOTAL_STEPS = 5
 export const ONBOARDING_COMPLETE_STEP = 6
@@ -17,7 +18,8 @@ export const AGE_GROUP_OPTIONS = [
 ] as const
 
 export const AFFILIATION_TYPE_OPTIONS = [
-  { value: "university", label: "University / graduate school" },
+  { value: "university", label: "University" },
+  { value: "graduate_school", label: "Graduate school" },
   { value: "company", label: "Company" },
   { value: "other", label: "Other organization" },
   { value: "none", label: "No affiliation" },
@@ -51,6 +53,7 @@ export type ValidationResult<T> =
 
 const ageGroups = new Set<string>(AGE_GROUP_OPTIONS.map((option) => option.value))
 const affiliationTypes = new Set<string>(AFFILIATION_TYPE_OPTIONS.map((option) => option.value))
+const academicAffiliationTypes = new Set<AffiliationType>(["university", "graduate_school"])
 const interestValues = new Set<string>(WANTS_OPTIONS.map((option) => option.value))
 
 export function validateName(value: unknown): ValidationResult<string> {
@@ -113,12 +116,15 @@ export function validateAffiliations(value: unknown): ValidationResult<Affiliati
       }
     }
 
-    const key = `${type}:${name.toLocaleLowerCase()}`
+    const normalizedName = academicAffiliationTypes.has(type)
+      ? canonicalizeUniversityName(name)
+      : name
+    const key = `${type}:${normalizedName.toLocaleLowerCase()}`
     if (seen.has(key)) {
       return { success: false, error: "Duplicate affiliations are not allowed." }
     }
     seen.add(key)
-    normalized.push({ type, name })
+    normalized.push({ type, name: normalizedName })
   }
 
   if (normalized.some((item) => item.type === "none") && normalized.length > 1) {

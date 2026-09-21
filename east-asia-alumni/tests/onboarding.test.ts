@@ -1,6 +1,11 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import {
+  canonicalizeUniversityName,
+  findUniversityByInput,
+  searchUniversities,
+} from "../src/data/universities.ts"
+import {
   getAuthRedirect,
   validateAffiliations,
   validateAgeGroup,
@@ -47,6 +52,46 @@ test("normalizes multiple affiliations and requires names when appropriate", () 
     validateAffiliations([
       { type: "none", name: null },
       { type: "other", name: "Community" },
+    ]).success,
+    false,
+  )
+})
+
+test("canonicalizes university spelling variants to one saved name", () => {
+  for (const variant of [
+    "keio",
+    "Keio University",
+    "Keio Graduate School",
+    "慶応",
+    "慶應",
+    "慶応大学",
+    "慶應義塾大学",
+    "慶應義塾大学大学院",
+  ]) {
+    assert.equal(canonicalizeUniversityName(variant), "Keio University")
+  }
+  assert.equal(findUniversityByInput("早稲田")?.name, "Waseda University")
+  assert.equal(searchUniversities("慶応")[0]?.name, "Keio University")
+})
+
+test("keeps university and graduate school as separate affiliations", () => {
+  assert.deepEqual(
+    validateAffiliations([
+      { type: "university", name: "慶応" },
+      { type: "graduate_school", name: "keio" },
+    ]),
+    {
+      success: true,
+      value: [
+        { type: "university", name: "Keio University" },
+        { type: "graduate_school", name: "Keio University" },
+      ],
+    },
+  )
+  assert.equal(
+    validateAffiliations([
+      { type: "university", name: "慶応" },
+      { type: "university", name: "Keio University" },
     ]).success,
     false,
   )

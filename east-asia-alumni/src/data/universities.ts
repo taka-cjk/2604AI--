@@ -1,6 +1,7 @@
 export type UniversityEntry = {
   name: string
   nameJa?: string
+  aliases?: string[]
   country: string
   programs?: string[]
 }
@@ -15,7 +16,22 @@ export const UNIVERSITIES: UniversityEntry[] = [
   { name: "Kyushu University", nameJa: "九州大学", country: "Japan", programs: ["CAMPUS Asia"] },
   { name: "Hokkaido University", nameJa: "北海道大学", country: "Japan", programs: ["CAMPUS Asia"] },
   { name: "Waseda University", nameJa: "早稲田大学", country: "Japan", programs: ["CAMPUS Asia", "AFLSP"] },
-  { name: "Keio University", nameJa: "慶應義塾大学", country: "Japan", programs: ["CAMPUS Asia", "AFLSP"] },
+  {
+    name: "Keio University",
+    nameJa: "慶應義塾大学",
+    aliases: [
+      "keio",
+      "慶応",
+      "慶應",
+      "慶応大学",
+      "慶應大学",
+      "慶応義塾",
+      "慶應義塾",
+      "慶応義塾大学",
+    ],
+    country: "Japan",
+    programs: ["CAMPUS Asia", "AFLSP"],
+  },
   { name: "University of Tsukuba", nameJa: "筑波大学", country: "Japan", programs: ["CAMPUS Asia"] },
   { name: "Kobe University", nameJa: "神戸大学", country: "Japan", programs: ["CAMPUS Asia"] },
   { name: "Tokyo Institute of Technology", nameJa: "東京工業大学", country: "Japan" },
@@ -166,3 +182,75 @@ export const UNIVERSITIES: UniversityEntry[] = [
 export const UNIVERSITY_NAMES = UNIVERSITIES.map((u) => u.name)
 
 export const COUNTRIES = [...new Set(UNIVERSITIES.map((u) => u.country))]
+
+/**
+ * Normalizes only for matching. The canonical value saved to the database is
+ * always UniversityEntry.name, so spelling and punctuation variants do not
+ * create separate classifications.
+ */
+export function normalizeUniversityLookup(value: string) {
+  return value
+    .normalize("NFKC")
+    .toLocaleLowerCase("en")
+    .replace(/[\p{P}\p{S}\p{Z}]/gu, "")
+}
+
+function universitySearchTerms(university: UniversityEntry) {
+  const terms = new Set(
+    [university.name, university.nameJa, ...(university.aliases ?? [])].filter(
+      (term): term is string => Boolean(term),
+    ),
+  )
+
+  terms.add(university.name.replace(/\s+university$/i, ""))
+  terms.add(university.name.replace(/^university\s+of\s+/i, ""))
+  if (university.nameJa) {
+    terms.add(university.nameJa.replace(/(?:大学校|大学|大學)$/u, ""))
+  }
+
+  return [...terms].map(normalizeUniversityLookup).filter(Boolean)
+}
+
+const universityTerms = new Map(
+  UNIVERSITIES.map((university) => [university, universitySearchTerms(university)]),
+)
+
+function inputSearchTerms(value: string) {
+  const terms = new Set([
+    value,
+    value.replace(/大学院$/u, ""),
+    value.replace(/\s+(?:graduate|grad)\s+school$/i, ""),
+    value.replace(/^graduate\s+school\s+of\s+/i, ""),
+  ])
+  return [...terms].map(normalizeUniversityLookup).filter(Boolean)
+}
+
+export function findUniversityByInput(value: string) {
+  const normalizedInputs = inputSearchTerms(value)
+  if (normalizedInputs.length === 0) return undefined
+
+  return UNIVERSITIES.find((university) => {
+    const terms = universityTerms.get(university) ?? []
+    return normalizedInputs.some((input) => terms.includes(input))
+  })
+}
+
+export function searchUniversities(value: string, limit = 20) {
+  const normalizedInputs = inputSearchTerms(value)
+  if (normalizedInputs.length === 0) return UNIVERSITIES.slice(0, limit)
+
+  return UNIVERSITIES.filter((university) => {
+    const terms = universityTerms.get(university) ?? []
+    return (
+      normalizedInputs.some((input) => terms.some((term) => term.includes(input))) ||
+      normalizedInputs.some((input) =>
+        normalizeUniversityLookup(university.country).includes(input),
+      )
+    )
+  }).slice(0, limit)
+}
+
+export function canonicalizeUniversityName(value: string) {
+  const trimmed = value.trim()
+  return findUniversityByInput(trimmed)?.name ?? trimmed
+}

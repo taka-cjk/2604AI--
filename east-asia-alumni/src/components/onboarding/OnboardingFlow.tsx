@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { UniversityCombobox } from "@/components/ui/UniversityCombobox"
 import { WANTS_OPTIONS } from "@/data/wants"
 import {
   AFFILIATION_TYPE_OPTIONS,
@@ -113,7 +114,7 @@ export function OnboardingFlow({
 
     setAffiliations((current) =>
       current.map((affiliation, affiliationIndex) =>
-        affiliationIndex === index ? { ...affiliation, type } : affiliation,
+        affiliationIndex === index ? { type, name: "" } : affiliation,
       ),
     )
   }
@@ -232,7 +233,7 @@ export function OnboardingFlow({
           <section>
             <h2 className="text-xl font-semibold text-slate-900">Where are you affiliated?</h2>
             <p className="mt-2 text-sm text-slate-500">
-              Add your university, company, or another organization. You can add more than one.
+              Add your university, graduate school, company, or another organization. You can add more than one.
             </p>
             <div className="mt-6 space-y-4">
               {affiliations.map((affiliation, index) => (
@@ -271,20 +272,31 @@ export function OnboardingFlow({
                       </option>
                     ))}
                   </select>
-                  {affiliation.type && affiliation.type !== "none" && (
+                  {(affiliation.type === "university" ||
+                    affiliation.type === "graduate_school") && (
+                    <div className="mt-3">
+                      <UniversityCombobox
+                        key={affiliation.type}
+                        required
+                        maxLength={MAX_AFFILIATION_NAME_LENGTH}
+                        value={affiliation.name}
+                        onChange={(universityName) => updateAffiliationName(index, universityName)}
+                        placeholder={
+                          affiliation.type === "graduate_school"
+                            ? "Graduate school name"
+                            : "University name"
+                        }
+                      />
+                    </div>
+                  )}
+                  {(affiliation.type === "company" || affiliation.type === "other") && (
                     <input
                       required
                       maxLength={MAX_AFFILIATION_NAME_LENGTH}
                       value={affiliation.name}
                       onChange={(event) => updateAffiliationName(index, event.target.value)}
                       className={`${inputClass} mt-3`}
-                      placeholder={
-                        affiliation.type === "university"
-                          ? "University / graduate school name"
-                          : affiliation.type === "company"
-                            ? "Company name"
-                            : "Organization name"
-                      }
+                      placeholder={affiliation.type === "company" ? "Company name" : "Organization name"}
                     />
                   )}
                 </div>

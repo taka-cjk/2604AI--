@@ -139,7 +139,8 @@ try {
   const affiliationResult = await onboardingRequest(userA, "PATCH", {
     step: "affiliations",
     affiliations: [
-      { type: "university", name: "Keio University" },
+      { type: "university", name: "慶応" },
+      { type: "graduate_school", name: "keio" },
       { type: "company", name: "Example Inc." },
     ],
   })
@@ -148,7 +149,15 @@ try {
   const { data: ownAffiliations } = await userA.client
     .from("profile_affiliations")
     .select("profile_id, affiliation_type, affiliation_name")
-  verified(ownAffiliations?.length === 2, "User should read both own affiliations")
+  verified(ownAffiliations?.length === 3, "User should read all own affiliations")
+  verified(
+    ownAffiliations?.filter(
+      (row) =>
+        ["university", "graduate_school"].includes(row.affiliation_type) &&
+        row.affiliation_name === "Keio University",
+    ).length === 2,
+    "University variants should be stored under one canonical name",
+  )
 
   const { data: hiddenAffiliations } = await userB.client
     .from("profile_affiliations")
@@ -173,7 +182,7 @@ try {
     .select("profile_id, affiliation_type")
     .in("profile_id", [users[0].id, users[1].id])
   verified(
-    allTestAffiliations.filter((row) => row.profile_id === users[0].id).length === 2,
+    allTestAffiliations.filter((row) => row.profile_id === users[0].id).length === 3,
     "RPC must not replace another user's affiliations",
   )
   verified(
