@@ -5,7 +5,7 @@
 | 用途 | Git branch | Vercel | Supabase | migration |
 |---|---|---|---|---|
 | 本番 | `main` | Production | `ircvfhgjvkdwxxumsyqs` | `007`まで（新コードの本番確認後に`008`） |
-| 統合開発 | `develop` | Preview | 独立したdevelopment project | `008`を含む最新まで |
+| 統合開発 | `develop` | Preview | 独立したdevelopment project | 最新まで（現在`009`） |
 | 個別機能 | `feature/*` | Preview | development project | 最新まで |
 
 SupabaseのFreeプランではDatabase Branchingを利用できないため、developmentは本番とデータを共有しない2つ目のSupabaseプロジェクトとして用意する。開発用データやテストユーザーを本番へコピーしない。
@@ -29,7 +29,7 @@ Supabase Dashboardで次のプロジェクトを作成する。
 - Production dataのコピー: しない
 - Database password: productionとは異なる強い値
 
-作成後、`.env.example`を参考に`.env.local`をdevelopmentのURL・anon key・DB passwordへ切り替える。Personal Access Tokenはプロジェクト作成・migration実行権限を持つものを使う。
+作成後、現在のproduction設定が入った`.env.local`は変更せず、`.env.development.local`にdevelopmentのURL・anon key・DB passwordを設定する。Personal Access Tokenはmigration実行権限を持つものを使う。Next.jsのdevelopment実行とオンボーディング統合テストは`.env.development.local`を優先して読み込む。
 
 その後、development projectへ明示的にリンクする。
 
@@ -41,9 +41,9 @@ npx supabase db push
 
 `supabase:verify:develop`は、次のいずれかなら失敗する。
 
-- `.env.local`がproductionを指している
+- `.env.development.local`が存在しない、またはproductionを指している
 - Supabase CLIが未リンク
-- `.env.local`とCLIのリンク先が異なる
+- `.env.development.local`とCLIのリンク先が異なる
 
 migration適用後、`npm run dev -- --port 3100`を起動して次を実行する。
 
@@ -79,3 +79,5 @@ productionは現在`007_secure_onboarding_state_phase1.sql`までで止める。
 5. RLS/API統合テストを再実行する。
 
 `008`より後のmigrationも同様に、まずdevelopmentへ適用し、検証後にリリース手順へ含める。
+
+`009_restore_legacy_profile_columns.sql`は、過去にproductionへ手動追加されていたprofile列をmigration履歴へ取り込むための冪等migrationである。productionでは既存列に対してno-opになり、クリーンなdevelopment環境では同じschemaを再現する。

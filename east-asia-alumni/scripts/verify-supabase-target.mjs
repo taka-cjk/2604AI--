@@ -34,11 +34,12 @@ if (expectedEnvironment !== "develop") {
 }
 
 const projectRoot = resolve(import.meta.dirname, "..")
+loadEnvFile(resolve(projectRoot, ".env.development.local"))
 loadEnvFile(resolve(projectRoot, ".env.local"))
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 if (!supabaseUrl) {
-  console.error("NEXT_PUBLIC_SUPABASE_URL is missing from .env.local")
+  console.error("NEXT_PUBLIC_SUPABASE_URL is missing from .env.development.local")
   process.exit(1)
 }
 
@@ -51,7 +52,7 @@ try {
 }
 
 if (!envProjectRef || envProjectRef === PRODUCTION_PROJECT_REF) {
-  console.error("Blocked: .env.local points to the production Supabase project")
+  console.error("Blocked: .env.development.local points to the production Supabase project")
   process.exit(1)
 }
 
@@ -62,7 +63,7 @@ if (!linkedProjectRef) {
 }
 
 if (linkedProjectRef !== envProjectRef) {
-  console.error("Blocked: .env.local and the Supabase CLI link point to different projects")
+  console.error("Blocked: .env.development.local and the Supabase CLI link point to different projects")
   process.exit(1)
 }
 

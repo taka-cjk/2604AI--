@@ -3,8 +3,15 @@ import { readFileSync } from "node:fs"
 import { createServerClient } from "@supabase/ssr"
 import { createClient } from "@supabase/supabase-js"
 
-function loadLocalEnv() {
-  const contents = readFileSync(new URL("../.env.local", import.meta.url), "utf8")
+function loadEnvFile(fileName) {
+  let contents
+  try {
+    contents = readFileSync(new URL(`../${fileName}`, import.meta.url), "utf8")
+  } catch (error) {
+    if (error?.code === "ENOENT") return
+    throw error
+  }
+
   for (const line of contents.split(/\r?\n/)) {
     const match = line.match(/^([A-Z0-9_]+)=(.*)$/)
     if (!match || process.env[match[1]]) continue
@@ -13,7 +20,8 @@ function loadLocalEnv() {
   }
 }
 
-loadLocalEnv()
+loadEnvFile(".env.development.local")
+loadEnvFile(".env.local")
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
