@@ -10,7 +10,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
-    "test:integration": "node scripts/test-onboarding-integration.mjs"
+    "test:integration": "node scripts/test-onboarding-integration.mjs",
+    "supabase:verify:develop": "node scripts/verify-supabase-target.mjs develop"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",

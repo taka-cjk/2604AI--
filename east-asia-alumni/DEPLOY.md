@@ -192,6 +192,9 @@ Code: NOT_FOUND
 
 ## 5. 運用上の注意点まとめ
 
+ブランチ・Vercel・Supabaseを分離した今後の標準運用は
+[`docs/development-workflow.md`](docs/development-workflow.md)を参照すること。
+
 ### オンボーディング非公開化migrationの適用順序
 
 オンボーディング状態を公開`profiles`から非公開`user_onboarding`へ移す変更は、
