@@ -17,7 +17,6 @@ export interface Profile {
   id: string
   username: string
   full_name: string
-  age_group: string | null
   avatar_url: string | null
   bio: string | null
   home_country: string | null
@@ -29,10 +28,6 @@ export interface Profile {
   wants: string[] | null
   member_number?: number | null
   show_on_map: boolean | null
-  onboarding_current_step: number
-  onboarding_completed_at: string | null
-  privacy_policy_accepted_at: string | null
-  privacy_policy_version: string | null
   created_at: string
   updated_at: string
 }
@@ -209,22 +204,16 @@ export type Database = {
           id: string
           username: string
           full_name: string
-          age_group?: string | null
           avatar_url?: string | null
           bio?: string | null
           home_country?: string | null
           current_location?: string | null
           work_location?: string | null
           tags?: string[]
-          onboarding_current_step?: number
-          onboarding_completed_at?: string | null
-          privacy_policy_accepted_at?: string | null
-          privacy_policy_version?: string | null
         }
         Update: {
           username?: string
           full_name?: string
-          age_group?: string | null
           avatar_url?: string | null
           bio?: string | null
           home_country?: string | null
@@ -234,10 +223,6 @@ export type Database = {
           sns_links?: SnsLinks | null
           area?: string[] | null
           wants?: string[] | null
-          onboarding_current_step?: number
-          onboarding_completed_at?: string | null
-          privacy_policy_accepted_at?: string | null
-          privacy_policy_version?: string | null
         }
         Relationships: []
       }

@@ -12,13 +12,20 @@ export default async function MainLayout({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("avatar_url, full_name, onboarding_completed_at")
-    .eq("id", user.id)
-    .single()
+  const [{ data: profile }, { data: onboarding }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("avatar_url, full_name")
+      .eq("id", user.id)
+      .single(),
+    supabase
+      .from("user_onboarding")
+      .select("onboarding_completed_at")
+      .eq("profile_id", user.id)
+      .single(),
+  ])
 
-  if (!profile?.onboarding_completed_at) redirect("/auth/onboarding")
+  if (!profile || !onboarding?.onboarding_completed_at) redirect("/auth/onboarding")
 
   let unreadCount = 0
   let unreadMessageCount = 0

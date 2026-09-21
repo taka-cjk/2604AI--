@@ -192,6 +192,21 @@ Code: NOT_FOUND
 
 ## 5. 運用上の注意点まとめ
 
+### オンボーディング非公開化migrationの適用順序
+
+オンボーディング状態を公開`profiles`から非公開`user_onboarding`へ移す変更は、
+本番停止を避けるため二段階になっている。
+
+1. `007_secure_onboarding_state_phase1.sql`を適用する（適用済み）
+2. `user_onboarding`を参照するアプリケーションコードをVercel本番へデプロイする
+3. 新規登録・ログイン・オンボーディング・通常画面への遷移を確認する
+4. デプロイ確認後に`008_finalize_private_onboarding_state.sql`を適用する
+5. RLS/API統合テストを再実行する
+
+> **重要:** 手順2より前に`008`を適用すると、旧本番コードが参照している
+> `profiles.onboarding_completed_at`などの列がなくなり、本番サイトが壊れる。
+> 新コードの本番反映を確認するまで、`supabase db push`で`008`を適用しないこと。
+
 ### git push すると自動デプロイされる
 - `main` ブランチへの push は自動で Vercel のビルドをトリガー
 - ビルド失敗しても前のデプロイは維持される（サイトは落ちない）

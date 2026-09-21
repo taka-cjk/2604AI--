@@ -525,7 +525,6 @@ export type Database = {
       }
       profiles: {
         Row: {
-          age_group: string | null
           area: string[] | null
           avatar_url: string | null
           bio: string | null
@@ -534,10 +533,6 @@ export type Database = {
           full_name: string
           home_country: string | null
           id: string
-          onboarding_completed_at: string | null
-          onboarding_current_step: number
-          privacy_policy_accepted_at: string | null
-          privacy_policy_version: string | null
           sns_links: Record<string, string> | null
           tags: string[] | null
           updated_at: string
@@ -547,7 +542,6 @@ export type Database = {
           work_location: string | null
         }
         Insert: {
-          age_group?: string | null
           area?: string[] | null
           avatar_url?: string | null
           bio?: string | null
@@ -556,10 +550,6 @@ export type Database = {
           full_name: string
           home_country?: string | null
           id: string
-          onboarding_completed_at?: string | null
-          onboarding_current_step?: number
-          privacy_policy_accepted_at?: string | null
-          privacy_policy_version?: string | null
           show_on_map?: boolean | null
           sns_links?: Record<string, string> | null
           tags?: string[] | null
@@ -569,7 +559,6 @@ export type Database = {
           work_location?: string | null
         }
         Update: {
-          age_group?: string | null
           area?: string[] | null
           avatar_url?: string | null
           bio?: string | null
@@ -578,10 +567,6 @@ export type Database = {
           full_name?: string
           home_country?: string | null
           id?: string
-          onboarding_completed_at?: string | null
-          onboarding_current_step?: number
-          privacy_policy_accepted_at?: string | null
-          privacy_policy_version?: string | null
           show_on_map?: boolean | null
           sns_links?: Record<string, string> | null
           tags?: string[] | null
@@ -591,6 +576,47 @@ export type Database = {
           work_location?: string | null
         }
         Relationships: []
+      }
+      user_onboarding: {
+        Row: {
+          age_group: string | null
+          created_at: string
+          onboarding_completed_at: string | null
+          onboarding_current_step: number
+          privacy_policy_accepted_at: string | null
+          privacy_policy_version: string | null
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          age_group?: string | null
+          created_at?: string
+          onboarding_completed_at?: string | null
+          onboarding_current_step?: number
+          privacy_policy_accepted_at?: string | null
+          privacy_policy_version?: string | null
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          age_group?: string | null
+          created_at?: string
+          onboarding_completed_at?: string | null
+          onboarding_current_step?: number
+          privacy_policy_accepted_at?: string | null
+          privacy_policy_version?: string | null
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_onboarding_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       study_abroad_histories: {
         Row: {
@@ -682,9 +708,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_my_onboarding: {
+        Args: { p_accepted: boolean; p_privacy_policy_version: string }
+        Returns: string
+      }
       replace_my_onboarding_affiliations: {
         Args: { p_affiliations: Json }
-        Returns: undefined
+        Returns: number
+      }
+      save_my_onboarding_age_group: {
+        Args: { p_age_group: string }
+        Returns: number
+      }
+      save_my_onboarding_interests: {
+        Args: { p_interests: string[] }
+        Returns: number
+      }
+      save_my_onboarding_name: {
+        Args: { p_name: string }
+        Returns: number
       }
     }
     Enums: {

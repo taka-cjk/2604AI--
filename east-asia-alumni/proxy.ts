@@ -57,12 +57,12 @@ export async function proxy(request: NextRequest) {
 
   let onboardingCompleted = false
   if (user && shouldCheckOnboarding) {
-    const { data: profile } = await supabase
-      .from('profiles')
+    const { data: onboarding } = await supabase
+      .from('user_onboarding')
       .select('onboarding_completed_at')
-      .eq('id', user.id)
+      .eq('profile_id', user.id)
       .maybeSingle()
-    onboardingCompleted = Boolean(profile?.onboarding_completed_at)
+    onboardingCompleted = Boolean(onboarding?.onboarding_completed_at)
   }
 
   const destination = getAuthRedirect({

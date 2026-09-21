@@ -80,6 +80,9 @@ const serviceRoleKey = await getServiceRoleKey()
 const admin = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
+const anonymous = createClient(supabaseUrl, anonKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+})
 
 const nonce = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`
 const password = `Integration-${crypto.randomUUID()}-A1!`
@@ -115,6 +118,12 @@ try {
   verified(initial.json.profile.onboarding_current_step === 1, "New user should begin at step 1")
   verified(initial.json.profile.onboarding_completed_at === null, "New user should be incomplete")
 
+  const { error: anonymousOnboardingError } = await anonymous
+    .from("user_onboarding")
+    .select("profile_id")
+    .eq("profile_id", users[0].id)
+  verified(Boolean(anonymousOnboardingError), "Anonymous users must not read onboarding state")
+
   const nameResult = await onboardingRequest(userA, "PATCH", {
     step: "name",
     name: "  Updated Integration User A  ",
@@ -135,6 +144,18 @@ try {
     ageGroup: "23_29",
   })
   verified(ageResult.response.status === 200, "Age-group step should save")
+
+  const { data: hiddenOnboarding } = await userB.client
+    .from("user_onboarding")
+    .select("profile_id")
+    .eq("profile_id", users[0].id)
+  verified(hiddenOnboarding?.length === 0, "Another user's onboarding state must be hidden by RLS")
+
+  const { error: directCompletionError } = await userA.client
+    .from("user_onboarding")
+    .update({ onboarding_completed_at: new Date().toISOString() })
+    .eq("profile_id", users[0].id)
+  verified(Boolean(directCompletionError), "Direct onboarding-state updates must be denied")
 
   const affiliationResult = await onboardingRequest(userA, "PATCH", {
     step: "affiliations",
@@ -165,6 +186,16 @@ try {
     .eq("profile_id", users[0].id)
   verified(hiddenAffiliations?.length === 0, "Another user's affiliations must be hidden by RLS")
 
+  const { error: directAffiliationError } = await userA.client
+    .from("profile_affiliations")
+    .insert({
+      profile_id: users[0].id,
+      affiliation_type: "company",
+      affiliation_name: "Bypass Inc.",
+      position: 9,
+    })
+  verified(Boolean(directAffiliationError), "Direct affiliation writes must be denied")
+
   const { data: forbiddenUpdate, error: forbiddenUpdateError } = await userB.client
     .from("profiles")
     .update({ full_name: "Unauthorized change" })
@@ -172,6 +203,17 @@ try {
     .select("id")
   verified(forbiddenUpdateError === null, "RLS update should fail closed without leaking an error")
   verified(forbiddenUpdate?.length === 0, "Another user's profile update must affect zero rows")
+
+  const userBName = await onboardingRequest(userB, "PATCH", {
+    step: "name",
+    name: users[1].name,
+  })
+  verified(userBName.response.status === 200, "Second user should save their own name")
+  const userBAge = await onboardingRequest(userB, "PATCH", {
+    step: "age_group",
+    ageGroup: "prefer_not_to_say",
+  })
+  verified(userBAge.response.status === 200, "Second user should save their own age group")
 
   const { error: ownRpcError } = await userB.client.rpc("replace_my_onboarding_affiliations", {
     p_affiliations: [{ type: "none", name: null }],
@@ -196,11 +238,18 @@ try {
   })
   verified(interestsResult.response.status === 200, "Multiple interests should save")
 
-  const { data: beforePrivacy } = await admin
-    .from("profiles")
-    .select("wants, onboarding_current_step, onboarding_completed_at")
-    .eq("id", users[0].id)
-    .single()
+  const [{ data: beforePrivacy }, { data: interestsBeforePrivacy }] = await Promise.all([
+    admin
+      .from("user_onboarding")
+      .select("onboarding_current_step, onboarding_completed_at")
+      .eq("profile_id", users[0].id)
+      .single(),
+    admin.from("profiles").select("wants").eq("id", users[0].id).single(),
+  ])
+  verified(
+    interestsBeforePrivacy.wants.join(",") === "career,study",
+    "Interests should be persisted on the profile",
+  )
   verified(beforePrivacy.onboarding_current_step === 5, "Interest step should advance to privacy")
   verified(beforePrivacy.onboarding_completed_at === null, "Completion timestamp must remain null")
 
@@ -216,9 +265,9 @@ try {
   })
   verified(refusedPrivacy.response.status === 400, "Privacy refusal should block completion")
   const { data: stillIncomplete } = await admin
-    .from("profiles")
+    .from("user_onboarding")
     .select("onboarding_completed_at")
-    .eq("id", users[0].id)
+    .eq("profile_id", users[0].id)
     .single()
   verified(stillIncomplete.onboarding_completed_at === null, "Refusal must not set completion timestamp")
 
