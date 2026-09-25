@@ -30,10 +30,17 @@ function formatTenure(iso: string) {
   return `${y}y ${m}m`
 }
 
-function overlaps(a: StudyAbroadHistory, b: StudyAbroadHistory): boolean {
-  if (a.university_name !== b.university_name) return false
-  return toDate(a.start_date) <= toDate(b.end_date) &&
-         toDate(b.start_date) <= toDate(a.end_date)
+function overlapMonths(a: StudyAbroadHistory, b: StudyAbroadHistory): number {
+  if (a.university_name !== b.university_name) return 0
+  const aStart = toDate(a.start_date)
+  const aEnd   = toDate(a.end_date)
+  const bStart = toDate(b.start_date)
+  const bEnd   = toDate(b.end_date)
+  const oStart = aStart > bStart ? aStart : bStart
+  const oEnd   = aEnd   < bEnd   ? aEnd   : bEnd
+  if (oEnd <= oStart) return 0
+  return (oEnd.getFullYear() - oStart.getFullYear()) * 12 +
+         (oEnd.getMonth()   - oStart.getMonth())
 }
 
 export default async function MyProfilePage() {
@@ -91,13 +98,30 @@ export default async function MyProfilePage() {
       .neq("profile_id", user.id)
 
     const filtered = (otherHistories ?? []) as StudyAbroadHistory[]
-    const overlapPairs = filtered.flatMap((other) => {
-      const mine = typedHistories.find((h) => overlaps(h, other))
-      return mine ? [{ other, mine }] : []
+
+    // 全ペアの重複月数を計算
+    const rawPairs = filtered.flatMap((other) => {
+      const mine = typedHistories.find((h) => overlapMonths(h, other) > 0)
+      if (!mine) return []
+      return [{ other, mine, months: overlapMonths(mine, other) }]
     })
 
-    if (overlapPairs.length > 0) {
-      const profileIds = [...new Set(overlapPairs.map((p) => p.other.profile_id))]
+    // 同一ユーザーは最大重複期間の1件だけ残す
+    const byProfile = new Map<string, typeof rawPairs[0]>()
+    for (const pair of rawPairs) {
+      const existing = byProfile.get(pair.other.profile_id)
+      if (!existing || pair.months > existing.months) {
+        byProfile.set(pair.other.profile_id, pair)
+      }
+    }
+
+    // 重複月数降順、上位5人
+    const topPairs = [...byProfile.values()]
+      .sort((a, b) => b.months - a.months)
+      .slice(0, 5)
+
+    if (topPairs.length > 0) {
+      const profileIds = topPairs.map((p) => p.other.profile_id)
       const { data: profilesRaw } = await supabase
         .from("profiles")
         .select("*")
@@ -107,12 +131,13 @@ export default async function MyProfilePage() {
         (profilesRaw ?? []).map((p) => [p.id, p as Profile])
       )
 
-      overlapEntries = overlapPairs
+      overlapEntries = topPairs
         .filter((p) => profileMap[p.other.profile_id])
         .map((p) => ({
           profile: profileMap[p.other.profile_id],
           history: p.other,
           overlapWith: p.mine,
+          overlapMonths: p.months,
         }))
     }
   }

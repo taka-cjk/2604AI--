@@ -8,6 +8,7 @@ export type OverlapEntry = {
   profile: Profile
   history: StudyAbroadHistory
   overlapWith: StudyAbroadHistory
+  overlapMonths: number
 }
 
 type Props = {
@@ -39,10 +40,11 @@ export function AlumniOverlapList({ entries }: Props) {
             At the same time at {university}
           </p>
           <div className="flex flex-col gap-2">
-            {group.map(({ profile, history, overlapWith }) => (
-              <div
+            {group.map(({ profile, history, overlapMonths: months }) => (
+              <Link
                 key={profile.id}
-                className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3"
+                href={`/profile/${profile.id}`}
+                className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 hover:bg-slate-50 transition-colors"
               >
                 <Avatar name={profile.full_name} avatarUrl={profile.avatar_url} size="sm" />
                 <div className="flex-1 min-w-0">
@@ -52,11 +54,14 @@ export function AlumniOverlapList({ entries }: Props) {
                     {history.program ? ` · ${history.program}` : ""}
                   </p>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-[10px] text-indigo-500 font-medium">Overlapping</p>
-                  <p className="text-[10px] text-slate-400">{formatPeriod(overlapWith)}</p>
+                <div className="shrink-0">
+                  <span className="rounded-full bg-indigo-50 border border-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-600">
+                    {months >= 12
+                      ? `${Math.floor(months / 12)}y ${months % 12 > 0 ? `${months % 12}m` : ""}`.trim()
+                      : `${months}m`} together
+                  </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
