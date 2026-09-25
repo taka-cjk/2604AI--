@@ -176,7 +176,7 @@ export function CareerTimeline({ studies, works }: Props) {
                   : "border-slate-200 text-slate-500 hover:border-slate-300 bg-white"
               }`}
             >
-              {p === "1y" ? "1年" : p === "6m" ? "6ヶ月" : "3ヶ月"}
+              {p === "1y" ? "1yr" : p === "6m" ? "6mo" : "3mo"}
             </button>
           ))}
         </div>
@@ -273,7 +273,7 @@ export function CareerTimeline({ studies, works }: Props) {
               onClick={() => setGanttExpanded(e => !e)}
               className="flex items-center gap-1 rounded-full border border-slate-300 px-4 py-1 text-xs font-semibold text-slate-500 hover:border-teal-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
             >
-              {ganttExpanded ? "閉じる" : "もっと見る"}
+              {ganttExpanded ? "Show less" : "Show more"}
               <ChevronIcon up={ganttExpanded} />
             </button>
           </div>
@@ -338,7 +338,7 @@ export function CareerTimeline({ studies, works }: Props) {
             onClick={() => setListExpanded(e => !e)}
             className="flex items-center gap-1 rounded-full border border-slate-300 px-4 py-1 text-xs font-semibold text-slate-500 hover:border-teal-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
           >
-            {listExpanded ? "閉じる" : `他 ${rows.length - LIST_INITIAL_ROWS} 件を見る`}
+            {listExpanded ? "Show less" : `Show ${rows.length - LIST_INITIAL_ROWS} more`}
             <ChevronIcon up={listExpanded} />
           </button>
         </div>
