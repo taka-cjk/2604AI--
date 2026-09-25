@@ -35,7 +35,7 @@ export function FollowButton({ targetId, currentUserId, initialFollowing }: Prop
     <button
       onClick={toggle}
       disabled={loading}
-      className={`shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-60 ${
+      className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors disabled:opacity-60 ${
         following
           ? "bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600"
           : "bg-indigo-600 text-white hover:bg-indigo-700"

@@ -113,21 +113,21 @@ export default async function MyProfilePage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between">
           <Avatar name={profile.full_name} avatarUrl={profile.avatar_url} size="lg" />
-          <div>
-            <h1 className="text-xl font-semibold text-slate-900">{profile.full_name}</h1>
-            <p className="text-sm text-slate-500">@{profile.username}</p>
-            {profile.bio && <p className="mt-2 text-sm text-slate-700">{profile.bio}</p>}
-          </div>
+          <Link
+            href="/profile/edit"
+            className="rounded-full border border-slate-300 px-4 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            Edit profile
+          </Link>
         </div>
-        <Link
-          href="/profile/edit"
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-        >
-          Edit profile
-        </Link>
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">{profile.full_name}</h1>
+          <p className="text-sm text-slate-500">@{profile.username}</p>
+          {profile.bio && <p className="mt-2 text-sm text-slate-700 leading-relaxed">{profile.bio}</p>}
+        </div>
       </div>
 
       {/* Tags */}
@@ -177,54 +177,46 @@ export default async function MyProfilePage() {
       )}
 
       {/* SNS links */}
-      {profile.sns_links && (
-        <div className="flex flex-col gap-3">
-          {/* Open SNS（入力があるものだけ表示） */}
-          {(() => {
-            const openSns = [
-              { key: "x", label: "X", url: (v: string) => `https://x.com/${v}` },
-              { key: "instagram", label: "Instagram", url: (v: string) => `https://instagram.com/${v}` },
-              { key: "facebook", label: "Facebook", url: (v: string) => v.startsWith("http") ? v : `https://facebook.com/${v}` },
-              { key: "note", label: "note", url: (v: string) => `https://note.com/${v}` },
-              { key: "wantedly", label: "Wantedly", url: (v: string) => v.startsWith("http") ? v : `https://wantedly.com/id/${v}` },
-              { key: "youtrust", label: "YOUTRUST", url: (v: string) => v.startsWith("http") ? v : `https://youtrust.jp/users/${v}` },
-            ]
-            const links = openSns.filter(s => (profile.sns_links as Record<string, string>)?.[s.key])
-            if (links.length === 0) return null
-            return (
-              <div className="flex flex-wrap gap-2">
-                {links.map(({ key, label, url }) => {
-                  const val = (profile.sns_links as Record<string, string>)[key]
-                  return (
-                    <a key={key} href={url(val)} target="_blank" rel="noopener noreferrer"
-                      className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors">
-                      {label}
-                    </a>
-                  )
-                })}
-              </div>
+      <div className="flex flex-col gap-2">
+        {/* IG / FB / LinkedIn — 常に3つ表示 */}
+        <div className="flex flex-wrap gap-2">
+          {([
+            { key: "instagram", label: "Instagram", bg: "bg-[#C13584]", url: (v: string) => v.startsWith("http") ? v : `https://instagram.com/${v}` },
+            { key: "facebook",  label: "Facebook",  bg: "bg-[#1877F2]", url: (v: string) => v.startsWith("http") ? v : `https://www.facebook.com/profile.php?id=${v}` },
+            { key: "linkedin",  label: "LinkedIn",  bg: "bg-[#0A66C2]", url: (v: string) => v.startsWith("http") ? v : `https://www.linkedin.com/in/${v}` },
+          ] as { key: string; label: string; bg: string; url: (v: string) => string }[]).map(({ key, label, bg, url }) => {
+            const val = (profile.sns_links as Record<string, string> | null)?.[key]
+            if (val) return (
+              <a key={key} href={url(val)} target="_blank" rel="noopener noreferrer"
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition-opacity ${bg}`}>
+                {label}
+              </a>
             )
-          })()}
-
-          {/* Closed SNS（常に表示、未入力はNot set） */}
-          <div className="flex flex-wrap gap-2">
-            {[
-              { key: "line", label: "LINE" },
-              { key: "wechat", label: "WeChat" },
-              { key: "kakao", label: "Kakao" },
-            ].map(({ key, label }) => {
-              const val = (profile.sns_links as Record<string, string>)?.[key]
-              return (
-                <span key={key}
-                  className={`rounded-full border px-3 py-1 text-xs ${val ? "border-slate-200 text-slate-600" : "border-dashed border-slate-200 text-slate-400"}`}
-                  title={val ? `${label}: ${val}` : undefined}>
-                  {label}: {val ?? "Not set"}
-                </span>
-              )
-            })}
-          </div>
+            return (
+              <span key={key} className="rounded-full border border-dashed border-slate-200 px-4 py-1.5 text-xs text-slate-300">
+                {label}
+              </span>
+            )
+          })}
         </div>
-      )}
+
+        {/* WeChat / LINE / Kakao — ID表示 */}
+        <div className="flex flex-wrap gap-2">
+          {([
+            { key: "wechat", label: "WeChat", filledClass: "border-[#07C160] bg-green-50 text-green-800" },
+            { key: "line",   label: "LINE",   filledClass: "border-[#00B900] bg-green-50 text-green-800" },
+            { key: "kakao",  label: "Kakao",  filledClass: "border-[#FEE500] bg-[#FEE500] text-[#3A1D1D]" },
+          ] as { key: string; label: string; filledClass: string }[]).map(({ key, label, filledClass }) => {
+            const val = (profile.sns_links as Record<string, string> | null)?.[key]
+            return (
+              <span key={key}
+                className={`rounded-full border px-3 py-1 text-xs font-medium ${val ? filledClass : "border-dashed border-slate-200 text-slate-300"}`}>
+                {label}{val ? `: ${val}` : ""}
+              </span>
+            )
+          })}
+        </div>
+      </div>
 
       {/* Study abroad timeline */}
       <div>

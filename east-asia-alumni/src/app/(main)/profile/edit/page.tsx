@@ -479,27 +479,40 @@ export default function ProfileEditPage() {
           {/* SNS links */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-3">SNS & contacts</label>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-3">
+              {/* Instagram */}
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-slate-500">Instagram</span>
+                <div className="flex items-center rounded-lg border border-slate-300 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 overflow-hidden">
+                  <span className="pl-3 text-xs text-slate-400 shrink-0">@</span>
+                  <input type="text" value={snsLinks.instagram ?? ""} onChange={(e) => setSnsLinks((s) => ({ ...s, instagram: e.target.value || undefined }))} placeholder="your_username" className="flex-1 px-2 py-2 text-sm outline-none bg-transparent" />
+                </div>
+              </div>
+              {/* Facebook */}
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-slate-500">Facebook</span>
+                <div className="flex items-center rounded-lg border border-slate-300 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 overflow-hidden">
+                  <span className="pl-3 text-xs text-slate-400 shrink-0 whitespace-nowrap">facebook.com/profile.php?id=</span>
+                  <input type="text" value={snsLinks.facebook ?? ""} onChange={(e) => setSnsLinks((s) => ({ ...s, facebook: e.target.value || undefined }))} placeholder="123456789" className="flex-1 px-2 py-2 text-sm outline-none bg-transparent min-w-0" />
+                </div>
+              </div>
+              {/* LinkedIn */}
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-slate-500">LinkedIn</span>
+                <div className="flex items-center rounded-lg border border-slate-300 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 overflow-hidden">
+                  <span className="pl-3 text-xs text-slate-400 shrink-0 whitespace-nowrap">linkedin.com/in/</span>
+                  <input type="text" value={snsLinks.linkedin ?? ""} onChange={(e) => setSnsLinks((s) => ({ ...s, linkedin: e.target.value || undefined }))} placeholder="your-name" className="flex-1 px-2 py-2 text-sm outline-none bg-transparent min-w-0" />
+                </div>
+              </div>
+              {/* WeChat / LINE / Kakao */}
               {([
-                { key: "x", label: "X (Twitter)", placeholder: "username (no @)" },
-                { key: "instagram", label: "Instagram", placeholder: "username" },
-                { key: "facebook", label: "Facebook", placeholder: "profile URL or username" },
-                { key: "wechat", label: "WeChat", placeholder: "WeChat ID" },
-                { key: "line", label: "LINE", placeholder: "LINE ID" },
-                { key: "kakao", label: "Kakao Talk", placeholder: "Kakao ID" },
-                { key: "note", label: "note", placeholder: "username" },
-                { key: "wantedly", label: "Wantedly", placeholder: "profile URL" },
-                { key: "youtrust", label: "YOUTRUST", placeholder: "profile URL" },
+                { key: "wechat", label: "WeChat",     placeholder: "WeChat ID · visible to all members" },
+                { key: "line",   label: "LINE",       placeholder: "LINE ID · visible to all members" },
+                { key: "kakao",  label: "Kakao Talk", placeholder: "Kakao ID · visible to all members" },
               ] as { key: keyof typeof snsLinks; label: string; placeholder: string }[]).map(({ key, label, placeholder }) => (
                 <div key={key} className="flex items-center gap-2">
                   <span className="w-24 shrink-0 text-xs text-slate-500">{label}</span>
-                  <input
-                    type="text"
-                    value={snsLinks[key] ?? ""}
-                    onChange={(e) => setSnsLinks((s) => ({ ...s, [key]: e.target.value || undefined }))}
-                    placeholder={placeholder}
-                    className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                  />
+                  <input type="text" value={snsLinks[key] ?? ""} onChange={(e) => setSnsLinks((s) => ({ ...s, [key]: e.target.value || undefined }))} placeholder={placeholder} className={inputClass} />
                 </div>
               ))}
             </div>

@@ -2,15 +2,12 @@ export type EventType = 'dinner' | 'study' | 'networking' | 'sports' | 'culture'
 export type NotificationType = 'follow' | 'like' | 'comment' | 'event_join' | 'event_update' | 'mention' | 'message' | 'thread_reply' | 'event_new'
 
 export type SnsLinks = {
-  x?: string
   instagram?: string
   facebook?: string
+  linkedin?: string
   wechat?: string
   line?: string
   kakao?: string
-  note?: string
-  wantedly?: string
-  youtrust?: string
 }
 
 export interface Profile {

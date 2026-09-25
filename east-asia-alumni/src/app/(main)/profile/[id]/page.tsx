@@ -76,12 +76,14 @@ export default async function UserProfilePage({ params }: Props) {
   const isFollowing = !!followRow
 
   const openSns = [
-    { key: "x", label: "X", url: (v: string) => `https://x.com/${v}` },
-    { key: "instagram", label: "Instagram", url: (v: string) => `https://instagram.com/${v}` },
-    { key: "facebook", label: "Facebook", url: (v: string) => v.startsWith("http") ? v : `https://facebook.com/${v}` },
-    { key: "note", label: "note", url: (v: string) => `https://note.com/${v}` },
-    { key: "wantedly", label: "Wantedly", url: (v: string) => v.startsWith("http") ? v : `https://wantedly.com/id/${v}` },
-    { key: "youtrust", label: "YOUTRUST", url: (v: string) => v.startsWith("http") ? v : `https://youtrust.jp/users/${v}` },
+    { key: "instagram", label: "Instagram", url: (v: string) => v.startsWith("http") ? v : `https://instagram.com/${v}` },
+    { key: "facebook",  label: "Facebook",  url: (v: string) => v.startsWith("http") ? v : `https://www.facebook.com/profile.php?id=${v}` },
+    { key: "linkedin",  label: "LinkedIn",  url: (v: string) => v.startsWith("http") ? v : `https://www.linkedin.com/in/${v}` },
+  ]
+  const closedSns = [
+    { key: "wechat", label: "WeChat" },
+    { key: "line", label: "LINE" },
+    { key: "kakao", label: "Kakao" },
   ]
   const snsLinks = profile.sns_links as Record<string, string> | null
   const visibleSns = openSns.filter((s) => snsLinks?.[s.key])
@@ -89,23 +91,23 @@ export default async function UserProfilePage({ params }: Props) {
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between">
           <Avatar name={profile.full_name} avatarUrl={profile.avatar_url} size="lg" />
-          <div>
-            <h1 className="text-xl font-semibold text-slate-900">{profile.full_name}</h1>
-            <p className="text-sm text-slate-500">@{profile.username}</p>
-            {profile.bio && <p className="mt-2 text-sm text-slate-700">{profile.bio}</p>}
+          <div className="flex gap-2">
+            <Link
+              href={`/messages/${id}`}
+              className="rounded-full border border-slate-300 px-4 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              Message
+            </Link>
+            <FollowButton targetId={id} currentUserId={user.id} initialFollowing={isFollowing} />
           </div>
         </div>
-        <div className="flex gap-2">
-          <Link
-            href={`/messages/${id}`}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
-          >
-            Message
-          </Link>
-          <FollowButton targetId={id} currentUserId={user.id} initialFollowing={isFollowing} />
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">{profile.full_name}</h1>
+          <p className="text-sm text-slate-500">@{profile.username}</p>
+          {profile.bio && <p className="mt-2 text-sm text-slate-700 leading-relaxed">{profile.bio}</p>}
         </div>
       </div>
 
@@ -166,22 +168,43 @@ export default async function UserProfilePage({ params }: Props) {
         </div>
       )}
 
-      {/* Open SNS */}
-      {visibleSns.length > 0 && (
+      {/* SNS links */}
+      <div className="flex flex-col gap-2">
+        {/* IG / FB / LinkedIn — 常に3つ表示 */}
         <div className="flex flex-wrap gap-2">
-          {visibleSns.map(({ key, label, url }) => (
-            <a
-              key={key}
-              href={url(snsLinks![key])}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
-            >
-              {label}
-            </a>
-          ))}
+          {openSns.map(({ key, label, url }) => {
+            const val = snsLinks?.[key]
+            const bg = key === "instagram" ? "bg-[#C13584]" : key === "facebook" ? "bg-[#1877F2]" : "bg-[#0A66C2]"
+            if (val) return (
+              <a key={key} href={url(val)} target="_blank" rel="noopener noreferrer"
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition-opacity ${bg}`}>
+                {label}
+              </a>
+            )
+            return (
+              <span key={key} className="rounded-full border border-dashed border-slate-200 px-4 py-1.5 text-xs text-slate-300">
+                {label}
+              </span>
+            )
+          })}
         </div>
-      )}
+
+        {/* WeChat / LINE / Kakao — ID表示 */}
+        <div className="flex flex-wrap gap-2">
+          {closedSns.map(({ key, label }) => {
+            const val = snsLinks?.[key]
+            const filledClass = key === "wechat" ? "border-[#07C160] bg-green-50 text-green-800"
+              : key === "line" ? "border-[#00B900] bg-green-50 text-green-800"
+              : "border-[#FEE500] bg-[#FEE500] text-[#3A1D1D]"
+            return (
+              <span key={key}
+                className={`rounded-full border px-3 py-1 text-xs font-medium ${val ? filledClass : "border-dashed border-slate-200 text-slate-300"}`}>
+                {label}{val ? `: ${val}` : ""}
+              </span>
+            )
+          })}
+        </div>
+      </div>
 
       {/* Study timeline */}
       {typedHistories.length > 0 && (
