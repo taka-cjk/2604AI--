@@ -98,29 +98,16 @@ export default async function MyProfilePage() {
 
     const filtered = (otherHistories ?? []) as StudyAbroadHistory[]
 
-    // 全ペアの重複月数を計算
-    const rawPairs = filtered.flatMap((other) => {
-      const mine = typedHistories.find((h) => overlapMonths(h, other) > 0)
-      if (!mine) return []
-      return [{ other, mine, months: overlapMonths(mine, other) }]
-    })
+    // (other, mine) の全ペアを列挙 — find ではなく全マッチを取る
+    const rawPairs = filtered.flatMap((other) =>
+      typedHistories
+        .map((mine) => ({ other, mine, months: overlapMonths(mine, other) }))
+        .filter((p) => p.months > 0)
+    )
 
-    // 同一ユーザーは最大重複期間の1件だけ残す
-    const byProfile = new Map<string, typeof rawPairs[0]>()
-    for (const pair of rawPairs) {
-      const existing = byProfile.get(pair.other.profile_id)
-      if (!existing || pair.months > existing.months) {
-        byProfile.set(pair.other.profile_id, pair)
-      }
-    }
-
-    // 重複月数降順、上位5人
-    const topPairs = [...byProfile.values()]
-      .sort((a, b) => b.months - a.months)
-      .slice(0, 5)
-
-    if (topPairs.length > 0) {
-      const profileIds = topPairs.map((p) => p.other.profile_id)
+    if (rawPairs.length > 0) {
+      // 全ユニーク profile_id をまとめてフェッチ
+      const profileIds = [...new Set(rawPairs.map((p) => p.other.profile_id))]
       const { data: profilesRaw } = await supabase
         .from("profiles")
         .select("*")
@@ -130,12 +117,28 @@ export default async function MyProfilePage() {
         (profilesRaw ?? []).map((p) => [p.id, p as Profile])
       )
 
-      for (const p of topPairs) {
-        const prof = profileMap[p.other.profile_id]
-        if (!prof) continue
-        const key = p.mine.id
-        if (!alumniMap[key]) alumniMap[key] = []
-        alumniMap[key].push({ profile: prof as Profile, overlapMonths: p.months })
+      // 大学ごと（mine.id）に独立してグループ化 → 月数降順 → 上位5人
+      const byInstitution = new Map<string, typeof rawPairs>()
+      for (const pair of rawPairs) {
+        const key = pair.mine.id
+        if (!byInstitution.has(key)) byInstitution.set(key, [])
+        byInstitution.get(key)!.push(pair)
+      }
+
+      for (const [key, pairs] of byInstitution) {
+        const seen = new Set<string>()
+        alumniMap[key] = pairs
+          .sort((a, b) => b.months - a.months)
+          .filter((p) => {
+            if (seen.has(p.other.profile_id)) return false
+            seen.add(p.other.profile_id)
+            return true
+          })
+          .slice(0, 5)
+          .flatMap((p) => {
+            const prof = profileMap[p.other.profile_id]
+            return prof ? [{ profile: prof as Profile, overlapMonths: p.months }] : []
+          })
       }
     }
   }
