@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import type { Profile, StudyAbroadHistory } from "@/types/index"
+import type { Profile, StudyAbroadHistory, WorkHistory } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
-import { StudyTimeline } from "@/components/profile/StudyTimeline"
+import { CareerTimeline } from "@/components/profile/CareerTimeline"
 import { AlumniOverlapList, type OverlapEntry } from "@/components/profile/AlumniOverlapList"
 import { WANTS_MAP } from "@/data/wants"
 
@@ -52,11 +52,17 @@ export default async function MyProfilePage() {
 
   const [
     { data: histories },
+    { data: workHistoriesRaw },
     { count: followingCount },
     { count: followersCount },
   ] = await Promise.all([
     supabase
       .from("study_abroad_histories")
+      .select("*")
+      .eq("profile_id", user.id)
+      .order("start_date", { ascending: true }),
+    supabase
+      .from("work_histories")
       .select("*")
       .eq("profile_id", user.id)
       .order("start_date", { ascending: true }),
@@ -71,6 +77,7 @@ export default async function MyProfilePage() {
   ])
 
   const typedHistories = (histories ?? []) as StudyAbroadHistory[]
+  const typedWorks = (workHistoriesRaw ?? []) as WorkHistory[]
 
   // 同じ大学にいた他ユーザーを検索
   const universityNames = [...new Set(typedHistories.map((h) => h.university_name))]
@@ -218,15 +225,15 @@ export default async function MyProfilePage() {
         </div>
       </div>
 
-      {/* Study abroad timeline */}
+      {/* Career timeline */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-slate-900">Study history</h2>
-          <Link href="/profile/edit#study" className="text-xs text-indigo-600 hover:underline">
+          <h2 className="text-sm font-semibold text-slate-900">Career</h2>
+          <Link href="/profile/edit" className="text-xs text-indigo-600 hover:underline">
             + Add
           </Link>
         </div>
-        <StudyTimeline histories={typedHistories} />
+        <CareerTimeline studies={typedHistories} works={typedWorks} />
       </div>
 
       {/* 同じ大学にいた人 */}

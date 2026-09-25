@@ -1,10 +1,10 @@
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import type { Profile, StudyAbroadHistory } from "@/types/index"
+import type { Profile, StudyAbroadHistory, WorkHistory } from "@/types/index"
 import { WANTS_MAP } from "@/data/wants"
 import { Avatar } from "@/components/ui/Avatar"
-import { StudyTimeline } from "@/components/profile/StudyTimeline"
+import { CareerTimeline } from "@/components/profile/CareerTimeline"
 import { FollowButton } from "@/components/profile/FollowButton"
 
 type Props = { params: Promise<{ id: string }> }
@@ -44,13 +44,24 @@ export default async function UserProfilePage({ params }: Props) {
 
   if (!profile) notFound()
 
-  const { data: histories } = await supabase
-    .from("study_abroad_histories")
-    .select("*")
-    .eq("profile_id", id)
-    .order("start_date", { ascending: true })
+  const [
+    { data: histories },
+    { data: workHistoriesRaw },
+  ] = await Promise.all([
+    supabase
+      .from("study_abroad_histories")
+      .select("*")
+      .eq("profile_id", id)
+      .order("start_date", { ascending: true }),
+    supabase
+      .from("work_histories")
+      .select("*")
+      .eq("profile_id", id)
+      .order("start_date", { ascending: true }),
+  ])
 
   const typedHistories = (histories ?? []) as StudyAbroadHistory[]
+  const typedWorks = (workHistoriesRaw ?? []) as WorkHistory[]
 
   const [
     { data: followRow },
@@ -206,11 +217,11 @@ export default async function UserProfilePage({ params }: Props) {
         </div>
       </div>
 
-      {/* Study timeline */}
-      {typedHistories.length > 0 && (
+      {/* Career timeline */}
+      {(typedHistories.length > 0 || typedWorks.length > 0) && (
         <div>
-          <h2 className="text-sm font-semibold text-slate-900 mb-4">Study history</h2>
-          <StudyTimeline histories={typedHistories} />
+          <h2 className="text-sm font-semibold text-slate-900 mb-4">Career</h2>
+          <CareerTimeline studies={typedHistories} works={typedWorks} />
         </div>
       )}
     </div>
