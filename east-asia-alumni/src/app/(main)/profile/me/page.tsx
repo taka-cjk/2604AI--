@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server"
 import type { Profile, StudyAbroadHistory, WorkHistory } from "@/types/index"
 import { Avatar } from "@/components/ui/Avatar"
 import { CareerTimeline } from "@/components/profile/CareerTimeline"
-import { AlumniOverlapList, type OverlapEntry } from "@/components/profile/AlumniOverlapList"
 import { WANTS_MAP } from "@/data/wants"
 
 function toDate(s: string | null | undefined): Date {
@@ -88,7 +87,7 @@ export default async function MyProfilePage() {
 
   // 同じ大学にいた他ユーザーを検索
   const universityNames = [...new Set(typedHistories.map((h) => h.university_name))]
-  let overlapEntries: OverlapEntry[] = []
+  const alumniMap: Record<string, Array<{ profile: Profile; overlapMonths: number }>> = {}
 
   if (universityNames.length > 0) {
     const { data: otherHistories } = await supabase
@@ -131,14 +130,13 @@ export default async function MyProfilePage() {
         (profilesRaw ?? []).map((p) => [p.id, p as Profile])
       )
 
-      overlapEntries = topPairs
-        .filter((p) => profileMap[p.other.profile_id])
-        .map((p) => ({
-          profile: profileMap[p.other.profile_id],
-          history: p.other,
-          overlapWith: p.mine,
-          overlapMonths: p.months,
-        }))
+      for (const p of topPairs) {
+        const prof = profileMap[p.other.profile_id]
+        if (!prof) continue
+        const key = p.mine.id
+        if (!alumniMap[key]) alumniMap[key] = []
+        alumniMap[key].push({ profile: prof as Profile, overlapMonths: p.months })
+      }
     }
   }
 
@@ -258,16 +256,9 @@ export default async function MyProfilePage() {
             + Add
           </Link>
         </div>
-        <CareerTimeline studies={typedHistories} works={typedWorks} />
+        <CareerTimeline studies={typedHistories} works={typedWorks} alumni={alumniMap} />
       </div>
 
-      {/* 同じ大学にいた人 */}
-      {overlapEntries.length > 0 && (
-        <div>
-          <h2 className="text-sm font-semibold text-slate-900 mb-4">Alumni from the same university</h2>
-          <AlumniOverlapList entries={overlapEntries} />
-        </div>
-      )}
     </div>
   )
 }

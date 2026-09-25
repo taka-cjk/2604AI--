@@ -1,11 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import type { StudyAbroadHistory, WorkHistory } from "@/types/index"
+import type { StudyAbroadHistory, WorkHistory, Profile } from "@/types/index"
+
+type AlumniEntry = { profile: Profile; overlapMonths: number }
 
 type Props = {
   studies: StudyAbroadHistory[]
   works: WorkHistory[]
+  alumni?: Record<string, AlumniEntry[]>
 }
 
 type Period = "1y" | "6m" | "3m"
@@ -64,10 +67,36 @@ function ChevronIcon({ up }: { up: boolean }) {
   )
 }
 
-export function CareerTimeline({ studies, works }: Props) {
-  const [period, setPeriod]           = useState<Period>("6m")
+function AlumniRow({ entry }: { entry: AlumniEntry }) {
+  const { profile, overlapMonths: months } = entry
+  const dur = months >= 12
+    ? `${Math.floor(months / 12)}y${months % 12 > 0 ? ` ${months % 12}m` : ""}`
+    : `${months}m`
+  const initial = profile.full_name.charAt(0).toUpperCase()
+  const palettes = [
+    "bg-pink-100 text-pink-700", "bg-emerald-100 text-emerald-700",
+    "bg-amber-100 text-amber-700", "bg-blue-100 text-blue-700",
+    "bg-purple-100 text-purple-700", "bg-orange-100 text-orange-700",
+  ]
+  const color = palettes[profile.full_name.charCodeAt(0) % palettes.length]
+  return (
+    <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2">
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${color}`}>
+        {initial}
+      </div>
+      <span className="text-sm font-medium text-slate-800 flex-1 truncate">{profile.full_name}</span>
+      <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 rounded-full px-2 py-0.5 whitespace-nowrap">
+        {dur} together
+      </span>
+    </div>
+  )
+}
+
+export function CareerTimeline({ studies, works, alumni = {} }: Props) {
+  const [period, setPeriod]               = useState<Period>("6m")
   const [ganttExpanded, setGanttExpanded] = useState(false)
   const [listExpanded,  setListExpanded]  = useState(false)
+  const [expandedStudyId, setExpandedStudyId] = useState<string | null>(null)
 
   if (studies.length === 0 && works.length === 0) {
     return <p className="text-sm text-slate-400">No history yet.</p>
@@ -317,14 +346,43 @@ export function CareerTimeline({ studies, works }: Props) {
 
               {/* 右列: テキスト */}
               <div className="flex-1 pb-5 pt-1">
-                <p className="text-[15px] font-bold text-slate-900 leading-snug">
-                  {row.label}
-                  {row.localName && (
-                    <span className="ml-2 text-sm font-normal text-slate-400">{row.localName}</span>
-                  )}
-                </p>
-                {row.sub && <p className="text-sm text-slate-500 mt-0.5">{row.sub}</p>}
-                <p className="text-xs text-slate-400 mt-1">{dateStr}</p>
+                {(() => {
+                  const rowAlumni = row.kind === "study" ? (alumni[row.id] ?? []) : []
+                  const isExpanded = expandedStudyId === row.id
+                  return (
+                    <>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[15px] font-bold text-slate-900 leading-snug">
+                            {row.label}
+                            {row.localName && (
+                              <span className="ml-2 text-sm font-normal text-slate-400">{row.localName}</span>
+                            )}
+                          </p>
+                          {row.sub && <p className="text-sm text-slate-500 mt-0.5">{row.sub}</p>}
+                          <p className="text-xs text-slate-400 mt-1">{dateStr}</p>
+                        </div>
+                        {rowAlumni.length > 0 && (
+                          <button
+                            onClick={() => setExpandedStudyId(id => id === row.id ? null : row.id)}
+                            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold border flex-shrink-0 transition-colors ${
+                              isExpanded
+                                ? "bg-indigo-600 text-white border-indigo-600"
+                                : "bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100"
+                            }`}
+                          >
+                            👥 {rowAlumni.length} <ChevronIcon up={isExpanded} />
+                          </button>
+                        )}
+                      </div>
+                      {isExpanded && (
+                        <div className="mt-2 flex flex-col gap-1.5">
+                          {rowAlumni.map(a => <AlumniRow key={a.profile.id} entry={a} />)}
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
             </div>
           )
