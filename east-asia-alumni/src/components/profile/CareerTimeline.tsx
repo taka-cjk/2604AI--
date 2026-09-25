@@ -53,8 +53,21 @@ function GradCapIcon() {
   )
 }
 
+const GANTT_INITIAL_ROWS = 3
+const LIST_INITIAL_ROWS  = 2
+
+function ChevronIcon({ up }: { up: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3 h-3">
+      <path strokeLinecap="round" strokeLinejoin="round" d={up ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
+    </svg>
+  )
+}
+
 export function CareerTimeline({ studies, works }: Props) {
-  const [period, setPeriod] = useState<Period>("6m")
+  const [period, setPeriod]           = useState<Period>("6m")
+  const [ganttExpanded, setGanttExpanded] = useState(false)
+  const [listExpanded,  setListExpanded]  = useState(false)
 
   if (studies.length === 0 && works.length === 0) {
     return <p className="text-sm text-slate-400">No history yet.</p>
@@ -118,7 +131,13 @@ export function CareerTimeline({ studies, works }: Props) {
   }
 
   const nowX = xOf(now)
-  const chartH = rows.length * ROW_H + 8
+
+  const visibleGanttRows  = ganttExpanded ? rows : rows.slice(0, GANTT_INITIAL_ROWS)
+  const showGanttToggle   = rows.length > GANTT_INITIAL_ROWS
+  const visibleListRows   = listExpanded  ? rows : rows.slice(0, LIST_INITIAL_ROWS)
+  const showListToggle    = rows.length > LIST_INITIAL_ROWS
+
+  const chartH = visibleGanttRows.length * ROW_H + 8
 
   const Axis = () => (
     <div className="relative h-5" style={{ minWidth: innerW }}>
@@ -187,7 +206,7 @@ export function CareerTimeline({ studies, works }: Props) {
               />
 
               {/* バー */}
-              {rows.map((row, i) => {
+              {visibleGanttRows.map((row, i) => {
                 const endX  = xOf(row.endD)
                 const startX = xOf(row.startD)
                 const w = Math.max(startX - endX, 3)
@@ -247,6 +266,19 @@ export function CareerTimeline({ studies, works }: Props) {
           </div>
         </div>
 
+        {/* ガント 展開トグル */}
+        {showGanttToggle && (
+          <div className="flex justify-center mt-2">
+            <button
+              onClick={() => setGanttExpanded(e => !e)}
+              className="flex items-center gap-1 rounded-full border border-slate-300 px-4 py-1 text-xs font-semibold text-slate-500 hover:border-teal-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
+            >
+              {ganttExpanded ? "閉じる" : "もっと見る"}
+              <ChevronIcon up={ganttExpanded} />
+            </button>
+          </div>
+        )}
+
         {/* 凡例 */}
         <div className="flex gap-3 mt-2">
           <div className="flex items-center gap-1.5">
@@ -262,8 +294,8 @@ export function CareerTimeline({ studies, works }: Props) {
 
       {/* ── YOUTRUST風縦リスト ── */}
       <div className="flex flex-col">
-        {rows.map((row, i) => {
-          const isLast = i === rows.length - 1
+        {visibleListRows.map((row, i) => {
+          const isLast = i === visibleListRows.length - 1
           const dur = calcDuration(row.startD.toISOString(), row.originalEnd)
           const dateStr = `${fmtMonth(row.startD.toISOString())} – ${fmtMonth(row.originalEnd)}${dur ? ` (${dur})` : ""}`
 
@@ -298,6 +330,19 @@ export function CareerTimeline({ studies, works }: Props) {
           )
         })}
       </div>
+
+      {/* リスト 展開トグル */}
+      {showListToggle && (
+        <div className="flex justify-center mt-1">
+          <button
+            onClick={() => setListExpanded(e => !e)}
+            className="flex items-center gap-1 rounded-full border border-slate-300 px-4 py-1 text-xs font-semibold text-slate-500 hover:border-teal-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
+          >
+            {listExpanded ? "閉じる" : `他 ${rows.length - LIST_INITIAL_ROWS} 件を見る`}
+            <ChevronIcon up={listExpanded} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
